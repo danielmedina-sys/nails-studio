@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Nails Studio Manager | Agenda & Estudio de Uñas</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Nails Studio" />
+  <meta name="theme-color" id="meta-theme-color" content="#B86B62" />
+
+  <!-- Tipografías Editoriales Exactas de la Vista Previa del Chat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Registro de Service Worker con limpieza automática de cachés antiguos (v1-v5)
+    if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+      window.addEventListener('load', async () => {
+        try {
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            for (const k of keys) {
+              if (k !== 'nails-studio-editorial-v100') {
+                await caches.delete(k);
+              }
+            }
+          }
+          const reg = await navigator.serviceWorker.register('sw.js?v=100');
+          reg.update();
+        } catch (err) {}
+      });
+    }
+  </script>
+
+  <style>
+    :root {
+      --brand: #B86B62;
+      --brand-dark: #9A544C;
+      --brand-light: #F5E6E4;
+      --brand-soft: #FBF4F3;
+      --bg-cream: #FDFBF9;
+      --ink: #2C2220;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-cream);
+      color: var(--ink);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-serif-editorial {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+    .brand-bg { background-color: var(--brand) !important; }
+    .brand-bg-hover:hover { background-color: var(--brand-dark) !important; }
+    .brand-text { color: var(--brand) !important; }
+    .brand-border { border-color: var(--brand) !important; }
+    .brand-light-bg { background-color: var(--brand-light) !important; }
+    .brand-soft-bg { background-color: var(--brand-soft) !important; }
+
+    .spectrum-bar {
+      background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 14px;
+      border-radius: 999px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid var(--brand);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+      cursor: pointer;
+    }
+    .card-luxury {
+      background: #FFFFFF;
+      border: 1px solid #F0E6E3;
+      box-shadow: 0 10px 30px -12px rgba(184, 107, 98, 0.10);
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-28">
+
+  <!-- PANTALLA DE BIENVENIDA / ACCESO POR CORREO (DISEÑO EDITORIAL EXACTO DE TU CAPTURA) -->
+  <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FDFBF9]/95 backdrop-blur-md hidden overflow-y-auto">
+    <div class="bg-white rounded-[32px] shadow-2xl max-w-md w-full p-8 border border-[#F0E6E3] text-center my-auto">
+      <!-- Ícono Editorial de Uña Almendrada con Destellos (o logo personalizado) -->
+      <div class="mx-auto mb-4 flex items-center justify-center">
+        <div id="login-vector-logo" class="w-20 h-20 rounded-[24px] brand-bg flex items-center justify-center shadow-lg">
+          <svg class="w-11 h-11 text-white" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 10C22 10 16 24 16 37C16 48.5 23 54 32 54C41 54 48 48.5 48 37C48 24 42 10 32 10Z" stroke="currentColor" stroke-width="3.5" fill="rgba(255,255,255,0.18)"/>
+            <path d="M32 16C25.5 16 21.5 26.5 21.5 36.5C21.5 44.5 26 48.5 32 48.5C38 48.5 42.5 44.5 42.5 36.5C42.5 26.5 38.5 16 32 16Z" stroke="currentColor" stroke-width="2.2"/>
+            <path d="M27 26C27 22 29 19 32 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M49 14L51 18L55 20L51 22L49 26L47 22L43 20L47 18L49 14Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <img id="login-custom-logo" src="" alt="Logo Estudio" class="w-20 h-20 rounded-[24px] object-cover shadow-lg hidden border border-[#F0E6E3]" />
+      </div>
+
+      <span class="inline-block px-3.5 py-1 rounded-full text-[10px] font-extrabold tracking-widest uppercase brand-soft-bg brand-text mb-2">
+        ESTUDIO & AGENDA PRO
+      </span>
+      <h1 class="font-serif-editorial text-4xl font-bold text-[#2C2220] mb-1">Bienvenida a tu Estudio</h1>
+      <p class="text-xs text-[#7D6B67] mb-6">Ingresa con tu correo electrónico para personalizar tu agenda, inventario y recordatorios</p>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E5D59] mb-1.5">Tu Correo Electrónico *</label>
+          <input type="email" id="login-email" required placeholder="ejemplo: valeria.nails@gmail.com" class="w-full px-4 py-3.5 rounded-2xl border border-[#E8DCD8] bg-[#FDFBF9] focus:bg-white focus:outline-none focus:border-[#B86B62] text-sm" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E5D59] mb-1.5">Tu Nombre o Nombre del Estudio (Opcional)</label>
+          <input type="text" id="login-name" placeholder="Si lo dejas vacío, tomaremos tu nombre del correo" class="w-full px-4 py-3.5 rounded-2xl border border-[#E8DCD8] bg-[#FDFBF9] focus:bg-white focus:outline-none focus:border-[#B86B62] text-sm" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E5D59] mb-1.5">Tu WhatsApp para recibir alertas (Opcional)</label>
+          <input type="tel" id="login-phone" placeholder="Ej: +584121234567" class="w-full px-4 py-3.5 rounded-2xl border border-[#E8DCD8] bg-[#FDFBF9] focus:bg-white focus:outline-none focus:border-[#B86B62] text-sm" />
+        </div>
+        <button type="submit" class="w-full py-4 rounded-2xl text-white font-bold text-sm shadow-lg brand-bg brand-bg-hover transition transform active:scale-[0.99]">
+          Ingresar a mi Estudio ✨
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- BARRA SUPERIOR EDITORIAL -->
+  <header class="sticky top-0 z-30 bg-[#FDFBF9]/95 backdrop-blur-md border-b border-[#F0E6E3]">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="openTab('settings')" title="Personalizar logo o estudio">
+        <div id="header-vector-logo" class="w-11 h-11 rounded-2xl brand-bg flex items-center justify-center shadow-sm">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 10C22 10 16 24 16 37C16 48.5 23 54 32 54C41 54 48 48.5 48 37C48 24 42 10 32 10Z" stroke="currentColor" stroke-width="4" fill="rgba(255,255,255,0.18)"/>
+            <path d="M49 14L51 18L55 20L51 22L49 26L47 22L43 20L47 18L49 14Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <img id="header-custom-logo" src="" alt="Logo" class="w-11 h-11 rounded-2xl object-cover shadow-sm border border-[#E8DCD8] hidden" />
+        <div>
+          <h1 id="header-studio-title" class="font-serif-editorial font-bold text-[#2C2220] text-xl leading-none">Nails Studio</h1>
+          <p id="header-user-email" class="text-[11px] text-[#7D6B67] truncate max-w-[160px] sm:max-w-xs mt-0.5">Agenda & Inventario Pro</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button onclick="openModal('modal-color')" class="px-3 py-2 rounded-xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3] flex items-center gap-1.5 shadow-sm" title="Selector de Color Modo Espectro">
+          <span class="w-3.5 h-3.5 rounded-full brand-bg inline-block"></span>
+          <span class="hidden sm:inline">Color</span>
+        </button>
+        <button onclick="openAppointmentModal()" class="px-3 py-2 rounded-xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3] flex items-center gap-1 shadow-sm">
+          <span>📅</span><span class="hidden sm:inline">Agendar</span>
+        </button>
+        <button onclick="openServiceModal()" class="px-3.5 py-2 rounded-xl text-white text-xs font-bold shadow-sm brand-bg brand-bg-hover flex items-center gap-1">
+          <span>+</span><span>Registrar Trabajo</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="max-w-5xl mx-auto px-4 pt-4 space-y-5">
+
+    <!-- BANNER DE DATOS DE EJEMPLO -->
+    <div id="demo-banner" class="hidden bg-[#FFF8EB] border border-[#F2DEC2] rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#735123]">
+      <div class="flex items-center gap-2">
+        <span class="text-base">✨</span>
+        <span>Estás viendo <strong>datos de ejemplo</strong> (citas, fórmulas, inventario y recordatorios activos).</span>
+      </div>
+      <button onclick="clearDemoData()" class="px-3 py-1.5 rounded-xl bg-[#F2DEC2] hover:bg-[#E6CCA8] font-bold text-[#4F3512] transition">
+        Limpiar ejemplos
+      </button>
+    </div>
+
+    <!-- PESTAÑA 1: INICIO / PANEL PRINCIPAL -->
+    <section id="tab-dashboard" class="space-y-5">
+      <div class="card-luxury rounded-[28px] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span id="today-date-badge" class="inline-block text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full brand-soft-bg brand-text mb-2">Hoy</span>
+          <h2 id="welcome-greeting" class="font-serif-editorial text-3xl sm:text-4xl font-bold text-[#2C2220]">Hola, Valeria Nails Studio ✨</h2>
+          <p class="text-xs text-[#7D6B67] mt-0.5">Resumen financiero real, próximas citas agendadas y retoques por recordar</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="enableNativeNotifications()" class="px-3.5 py-2.5 rounded-xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3] flex items-center gap-1.5">
+            <span>🔔</span><span>Alertas en Teléfono</span>
+          </button>
+          <button onclick="sendSelfSummaryWhatsApp()" class="px-4 py-2.5 rounded-xl bg-[#1F8A5B] hover:bg-[#186F48] text-white text-xs font-bold shadow-sm flex items-center gap-1.5">
+            <span>📲</span><span>Enviarme resumen del día a mi WhatsApp</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TARJETAS FINANCIERAS (4 INDICADORES) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="card-luxury p-4 sm:p-5 rounded-[24px]">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C7773]">Ingresos Brutos</p>
+          <p id="stat-gross" class="font-serif-editorial text-3xl font-bold text-[#2C2220] mt-1">$0.00</p>
+          <p id="stat-services-count" class="text-[11px] text-[#7D6B67] mt-1">0 servicios este mes</p>
+        </div>
+        <div class="card-luxury p-4 sm:p-5 rounded-[24px]">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C7773]">Gastos / Inversión</p>
+          <p id="stat-expenses" class="font-serif-editorial text-3xl font-bold text-[#C94A4A] mt-1">-$0.00</p>
+          <p id="stat-inventory-count" class="text-[11px] text-[#7D6B67] mt-1">0 productos en stock</p>
+        </div>
+        <div class="p-4 sm:p-5 rounded-[24px] bg-[#F2FBF6] border border-[#C6E9D6]">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#1B724B]">Ganancia Neta Real</p>
+          <p id="stat-net" class="font-serif-editorial text-3xl font-bold text-[#155E3D] mt-1">$0.00</p>
+          <p class="text-[11px] text-[#26855A] mt-1">Libre de insumos</p>
+        </div>
+        <div class="p-4 sm:p-5 rounded-[24px] brand-soft-bg border brand-border">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider brand-text">Retoques por Avisar</p>
+          <p id="stat-due-count" class="font-serif-editorial text-3xl font-bold brand-text mt-1">0</p>
+          <p class="text-[11px] text-[#7D6B67] mt-1">Hoy, vencidos o próx. 3d</p>
+        </div>
+      </div>
+
+      <!-- AVISO PARA LA MANICURISTA: A QUÉ CLIENTA LE TOCA SERVICIO Y FECHAS EXACTAS -->
+      <div class="card-luxury rounded-[28px] p-5 sm:p-6 border-2 brand-border">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl brand-soft-bg brand-text flex items-center justify-center text-lg font-bold">🔔</div>
+            <div>
+              <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">Recordatorios de Retoque para tus Clientas</h3>
+              <p class="text-xs text-[#7D6B67]">Te indica a cuál clienta le toca servicio, fecha de su última cita y fecha exacta del próximo retoque</p>
+            </div>
+          </div>
+          <button onclick="openClientModal()" class="self-start sm:self-auto px-3.5 py-2 rounded-xl brand-soft-bg brand-text text-xs font-bold">
+            + Nueva Clienta
+          </button>
+        </div>
+        <div id="manicurist-due-list" class="space-y-3"></div>
+      </div>
+
+      <!-- DESGLOSE POR MÉTODO DE PAGO Y PRÓXIMAS CITAS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card-luxury rounded-[28px] p-5">
+          <h3 class="font-serif-editorial text-xl font-bold text-[#2C2220] mb-3">💳 Ingresos del Mes por Cuenta</h3>
+          <div id="payment-methods-breakdown" class="grid grid-cols-2 gap-2.5 text-xs"></div>
+        </div>
+        <div class="card-luxury rounded-[28px] p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-serif-editorial text-xl font-bold text-[#2C2220]">📅 Próximas Citas Confirmadas</h3>
+            <button onclick="openTab('agenda')" class="text-xs font-bold brand-text">Ver agenda →</button>
+          </div>
+          <div id="dashboard-upcoming-appointments" class="space-y-2.5 text-xs"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 2: AGENDA & CALENDARIO POR DÍA Y POR HORA -->
+    <section id="tab-agenda" class="space-y-5 hidden">
+      <!-- Encabezado de Agenda -->
+      <div class="card-luxury rounded-[28px] p-5 sm:p-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <span class="inline-block text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full brand-soft-bg brand-text mb-1.5">CALENDARIO INTERACTIVO</span>
+          <h2 class="font-serif-editorial text-2xl sm:text-3xl font-bold text-[#2C2220]">📅 Calendario de Citas por Día y Hora</h2>
+          <p class="text-xs text-[#7D6B67]">Navega entre meses, selecciona cualquier día y visualiza u organiza tus citas hora por hora</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="goToTodayCalendar()" class="px-3.5 py-2.5 rounded-xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3] shadow-sm">
+            📍 Ir a Hoy
+          </button>
+          <button onclick="openAppointmentModal(selectedCalendarDate)" class="px-4 py-2.5 rounded-xl text-white text-xs font-bold brand-bg brand-bg-hover shadow-sm">
+            + Agendar en este Día
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenedor Principal: Calendario Mensual (Izquierda) + Cronograma por Hora del Día (Derecha) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Columna 1: Calendario Mensual Dinámico (7 columnas) -->
+        <div class="lg:col-span-7 card-luxury rounded-[28px] p-5 sm:p-6 space-y-4">
+          <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#F0E6E3]">
+            <button type="button" onclick="changeCalendarMonth(-1)" class="w-10 h-10 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] hover:bg-[#FBF4F3] flex items-center justify-center font-extrabold text-[#2C2220] shadow-sm" title="Mes anterior">
+              ‹
+            </button>
+            <div class="text-center">
+              <h3 id="calendar-month-title" class="font-serif-editorial text-2xl sm:text-3xl font-bold text-[#2C2220] capitalize">Mes Año</h3>
+              <p id="calendar-month-subtitle" class="text-[11px] text-[#7D6B67] font-semibold">0 citas agendadas en este mes</p>
+            </div>
+            <button type="button" onclick="changeCalendarMonth(1)" class="w-10 h-10 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] hover:bg-[#FBF4F3] flex items-center justify-center font-extrabold text-[#2C2220] shadow-sm" title="Mes siguiente">
+              ›
+            </button>
+          </div>
+
+          <!-- Cabecera de Días de la Semana -->
+          <div class="grid grid-cols-7 gap-1.5 text-center text-[11px] font-extrabold uppercase tracking-wider text-[#8C7773]">
+            <div>Lun</div>
+            <div>Mar</div>
+            <div>Mié</div>
+            <div>Jue</div>
+            <div>Vie</div>
+            <div>Sáb</div>
+            <div class="brand-text">Dom</div>
+          </div>
+
+          <!-- Cuadrícula de Días del Mes -->
+          <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 sm:gap-2"></div>
+
+          <!-- Leyenda del Calendario -->
+          <div class="pt-3 border-t border-[#F0E6E3] flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#7D6B67]">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full brand-bg"></span> Día con cita agendada</span>
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Hoy</span>
+            </div>
+            <span>Toca cualquier día para ver sus horas →</span>
+          </div>
+        </div>
+
+        <!-- Columna 2: Vista por Día y por Hora (Cronograma) -->
+        <div class="lg:col-span-5 card-luxury rounded-[28px] p-5 sm:p-6 flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-start justify-between gap-2 pb-3 border-b border-[#F0E6E3]">
+              <div>
+                <span id="selected-day-badge" class="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full brand-soft-bg brand-text mb-1">DÍA SELECCIONADO</span>
+                <h3 id="selected-day-title" class="font-serif-editorial text-2xl font-bold text-[#2C2220]">Hoy</h3>
+                <p id="selected-day-count" class="text-xs text-[#7D6B67]">0 citas programadas para este día</p>
+              </div>
+              <button onclick="openAppointmentModal(selectedCalendarDate)" class="px-3 py-2 rounded-xl brand-soft-bg brand-text text-xs font-extrabold hover:opacity-90">
+                + Nueva Hora
+              </button>
+            </div>
+
+            <!-- Filtro de vista horaria: Solo Horas Ocupadas vs Cronograma Completo por Horas (8:00 AM a 8:00 PM) -->
+            <div class="flex items-center justify-between bg-[#FDFBF9] p-1.5 rounded-2xl border border-[#E8DCD8]">
+              <button type="button" id="btn-hour-view-all" onclick="setDayHourViewMode('timeline')" class="flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold brand-bg text-white">
+                ⏰ Cronograma por Hora (8am - 8pm)
+              </button>
+              <button type="button" id="btn-hour-view-booked" onclick="setDayHourViewMode('booked')" class="flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold text-[#6E5D59]">
+                📋 Solo Horas con Cita
+              </button>
+            </div>
+
+            <!-- Lista / Cronograma de Horas del Día Seleccionado -->
+            <div id="day-hourly-schedule" class="space-y-2 max-h-[460px] overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista General de Todas las Próximas Citas del Mes -->
+      <div class="card-luxury rounded-[28px] p-5 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">📋 Resumen de Todas las Citas del Mes</h3>
+            <p class="text-xs text-[#7D6B67]">Listado cronológico completo para confirmar por WhatsApp o marcar como completadas</p>
+          </div>
+        </div>
+        <div id="appointments-list" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 3: DIRECTORIO DE CLIENTAS -->
+    <section id="tab-clients" class="space-y-4 hidden">
+      <div class="card-luxury rounded-[28px] p-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">👩‍🦰 Directorio de Clientas & Ciclos de Retoque</h2>
+          <p class="text-xs text-[#7D6B67]">Con fecha de última cita, cálculo automático del próximo retoque, alergias y ficha técnica visual</p>
+        </div>
+        <button onclick="openClientModal()" class="px-4 py-2.5 rounded-xl text-white text-xs font-bold brand-bg brand-bg-hover shadow-sm">
+          + Nueva Clienta
+        </button>
+      </div>
+      <div class="card-luxury rounded-2xl p-3">
+        <input type="text" id="client-search" oninput="renderClients()" placeholder="🔍 Buscar clienta por nombre, teléfono o preferencia..." class="w-full px-3.5 py-2 rounded-xl border border-[#E8DCD8] bg-[#FDFBF9] text-sm focus:outline-none" />
+      </div>
+      <div id="clients-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- PESTAÑA 4: HISTORIAL DE SERVICIOS MES A MES -->
+    <section id="tab-services" class="space-y-4 hidden">
+      <div class="card-luxury rounded-[28px] p-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">💅 Servicios Realizados Mes a Mes</h2>
+          <p class="text-xs text-[#7D6B67]">Filtra por mes para consultar tus trabajos, fotos de resultados y fórmulas aplicadas</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="month" id="filter-month" onchange="onMonthFilterChange()" class="px-3 py-2 rounded-xl border border-[#E8DCD8] bg-[#FDFBF9] text-xs font-bold" />
+          <button onclick="openServiceModal()" class="px-4 py-2.5 rounded-xl text-white text-xs font-bold brand-bg brand-bg-hover shadow-sm">
+            + Registrar Trabajo
+          </button>
+        </div>
+      </div>
+      <div id="services-list" class="space-y-3"></div>
+    </section>
+
+    <!-- PESTAÑA 5: INVENTARIO & GASTOS / INVERSIONES (COMPLETO CON SUB-PESTAÑAS Y FORMULARIOS DEL CHAT) -->
+    <section id="tab-inventory" class="space-y-5 hidden">
+      <div class="card-luxury rounded-[28px] p-5 sm:p-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-serif-editorial text-2xl sm:text-3xl font-bold text-[#2C2220]">📦 Inventario & Gastos / Inversiones</h2>
+          <p class="text-xs text-[#7D6B67]">Registra en qué hiciste gasto o inversión y controla qué tienes disponible en tu inventario</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="openInventoryItemModal()" class="px-3.5 py-2.5 rounded-xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3] flex items-center gap-1.5 shadow-sm">
+            <span>🧴</span><span>+ Agregar al Inventario</span>
+          </button>
+          <button onclick="openExpenseModal()" class="px-4 py-2.5 rounded-xl text-white text-xs font-bold brand-bg brand-bg-hover shadow-sm flex items-center gap-1.5">
+            <span>🧾</span><span>+ Registrar Gasto / Inversión</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Tarjetas de Resumen de Inventario -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="card-luxury p-4 rounded-[22px]">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#8C7773]">Artículos en Stock</p>
+          <p id="inv-total-items" class="font-serif-editorial text-3xl font-bold text-[#2C2220] mt-1">0</p>
+          <p class="text-[11px] text-[#7D6B67] mt-0.5">Esmaltes, geles y equipos</p>
+        </div>
+        <div class="card-luxury p-4 rounded-[22px] bg-[#F2FBF6] border-[#C6E9D6]">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#1B724B]">Valor en Inventario</p>
+          <p id="inv-total-value" class="font-serif-editorial text-3xl font-bold text-[#155E3D] mt-1">$0.00</p>
+          <p class="text-[11px] text-[#26855A] mt-0.5">Capital invertido en stock</p>
+        </div>
+        <div class="card-luxury p-4 rounded-[22px] bg-[#FFF8EB] border-[#F2DEC2]">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#9A631A]">Por Agotarse / Agotados</p>
+          <p id="inv-low-items" class="font-serif-editorial text-3xl font-bold text-[#9A631A] mt-1">0</p>
+          <button onclick="sendShoppingListWhatsApp()" class="text-[11px] font-bold text-[#735123] underline mt-0.5 block text-left">📲 Enviar lista a mi WhatsApp</button>
+        </div>
+        <div class="card-luxury p-4 rounded-[22px]">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#C94A4A]">Gasto / Inversión (Mes)</p>
+          <p id="inv-month-expenses" class="font-serif-editorial text-3xl font-bold text-[#C94A4A] mt-1">$0.00</p>
+          <p class="text-[11px] text-[#7D6B67] mt-0.5">Compras registradas este mes</p>
+        </div>
+      </div>
+
+      <!-- Selector de Vista Interna: Ver Ambos / Solo Mi Inventario / Solo Historial de Gastos -->
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="inline-flex p-1 rounded-2xl bg-white border border-[#E8DCD8]">
+          <button type="button" id="subtab-inv-all" onclick="setInventorySubView('all')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold brand-bg text-white">Vista Completa</button>
+          <button type="button" id="subtab-inv-stock" onclick="setInventorySubView('stock')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#6E5D59]">🧴 Mi Inventario Actual</button>
+          <button type="button" id="subtab-inv-expenses" onclick="setInventorySubView('expenses')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#6E5D59]">🧾 Gastos e Inversiones</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="inventory-category-filter" onchange="renderInventoryAndExpenses()" class="px-3 py-2 rounded-xl border border-[#E8DCD8] bg-white text-xs font-bold text-[#4A3B38]">
+            <option value="ALL">Todas las Categorías</option>
+            <option value="LOW">⚠️ Solo Por Agotarse / Agotados</option>
+            <option value="Esmaltes & Geles">💅 Esmaltes & Geles</option>
+            <option value="Acrílicos & Polygel">✨ Acrílicos & Polygel</option>
+            <option value="Descartables & Limas">🧽 Descartables & Limas</option>
+            <option value="Líquidos & Preparadores">💧 Líquidos & Preparadores</option>
+            <option value="Equipos & Herramientas">⚡ Equipos & Herramientas</option>
+            <option value="Decoración & Cristales">💎 Decoración & Cristales</option>
+          </select>
+          <input type="text" id="inventory-search" oninput="renderInventoryAndExpenses()" placeholder="🔍 Buscar insumo o equipo..." class="px-3.5 py-2 rounded-xl border border-[#E8DCD8] bg-white text-xs" />
+        </div>
+      </div>
+
+      <!-- Bloque 1: Existencias en Inventario -->
+      <div id="block-inventory-stock" class="card-luxury rounded-[28px] p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">🧴 ¿Qué tienes en Inventario? (Existencias Actuales)</h3>
+            <p class="text-xs text-[#7D6B67]">Ajusta con (-) cuando se gaste un insumo o con (+) cuando compres unidades</p>
+          </div>
+          <button onclick="openInventoryItemModal()" class="px-3 py-1.5 rounded-xl brand-soft-bg brand-text text-xs font-bold">+ Nuevo Producto</button>
+        </div>
+        <div id="inventory-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+      </div>
+
+      <!-- Bloque 2: En qué se hizo gasto o inversión -->
+      <div id="block-inventory-expenses" class="card-luxury rounded-[28px] p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">🧾 ¿En qué se hizo Gasto o Inversión?</h3>
+            <p class="text-xs text-[#7D6B67]">Historial de compras de material, inversión en equipos y gastos fijos del mes</p>
+          </div>
+          <button onclick="openExpenseModal()" class="px-3 py-1.5 rounded-xl brand-soft-bg brand-text text-xs font-bold">+ Registrar Compra</button>
+        </div>
+        <div id="expenses-list" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 6: AJUSTES, CUENTA, LOGO Y RESPALDO -->
+    <section id="tab-settings" class="space-y-4 hidden">
+      <div class="card-luxury rounded-[28px] p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#F0E6E3] pb-4">
+          <div>
+            <h2 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">⚙️ Ajustes del Estudio, Cuenta y Logo</h2>
+            <p class="text-xs text-[#7D6B67]">Personaliza el correo de bienvenida, el logo, los mensajes de WhatsApp y tus respaldos</p>
+          </div>
+          <button onclick="logoutAccount()" class="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold">
+            Cambiar de Correo / Bienvenida
+          </button>
+        </div>
+
+        <!-- Selección de Logo (Editorial vs Imagen Propia / Nails Studio) -->
+        <div class="p-4 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <img id="settings-logo-preview" src="icon-192.png" alt="Logo" class="w-16 h-16 rounded-2xl object-cover border border-[#E8DCD8] shadow-sm" />
+            <div>
+              <h3 class="font-bold text-[#2C2220] text-sm">Logo dentro de la Aplicación</h3>
+              <p class="text-xs text-[#7D6B67]">Puedes alternar entre el ícono editorial minimalista, el logo ilustrado Nails Studio o subir una foto de tu galería.</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="useIllustratedAppIcon()" class="px-3 py-2 rounded-xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3]">
+              🎨 Usar Logo Nails Studio
+            </button>
+            <label class="px-3 py-2 rounded-xl brand-soft-bg brand-text text-xs font-bold cursor-pointer">
+              📷 Subir de Galería
+              <input type="file" accept="image/*" class="hidden" onchange="handleCustomLogoUpload(event)" />
+            </label>
+            <button type="button" onclick="resetCustomLogo()" class="px-3 py-2 rounded-xl text-xs font-bold text-[#7D6B67] hover:text-[#2C2220]">
+              Ícono Minimalista
+            </button>
+          </div>
+        </div>
+
+        <!-- Formulario de Ajustes -->
+        <form onsubmit="saveSettingsForm(event)" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Correo de Acceso</label>
+              <input type="email" id="set-email" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Nombre de la Manicurista / Estudio</label>
+              <input type="text" id="set-name" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Tu WhatsApp (Para recibir reportes)</label>
+              <input type="tel" id="set-phone" placeholder="Ej: +584121234567" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Dirección del Estudio (Para citas)</label>
+              <input type="text" id="set-address" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Políticas de Puntualidad / Cita</label>
+            <input type="text" id="set-policy" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Plantilla de Recordatorio de Retoque por WhatsApp</label>
+            <textarea id="set-template" rows="3" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm"></textarea>
+            <p class="text-[11px] text-[#8C7773] mt-1">Variables dinámicas: <code>{nombre}</code>, <code>{dias}</code>, <code>{fecha_ultimo}</code>, <code>{servicio}</code>, <code>{estudio}</code></p>
+          </div>
+          <button type="submit" class="px-5 py-3 rounded-xl text-white font-bold text-xs brand-bg brand-bg-hover shadow-sm">
+            Guardar Ajustes
+          </button>
+        </form>
+
+        <!-- Copia de Seguridad -->
+        <div class="pt-4 border-t border-[#F0E6E3] flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-[#2C2220] text-sm">💾 Copia de Seguridad (JSON)</h3>
+            <p class="text-xs text-[#7D6B67]">Guarda o restaura todas tus clientas, servicios e inventario</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="exportBackupJSON()" class="px-3.5 py-2 rounded-xl bg-[#2C2220] text-white text-xs font-bold">
+              ⬇️ Descargar Respaldo
+            </button>
+            <label class="px-3.5 py-2 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] cursor-pointer hover:bg-[#FBF4F3]">
+              ⬆️ Restaurar Respaldo
+              <input type="file" accept=".json" class="hidden" onchange="importBackupJSON(event)" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- NAVEGACIÓN INFERIOR -->
+  <nav class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-[#F0E6E3] shadow-lg">
+    <div class="max-w-5xl mx-auto grid grid-cols-6 text-center">
+      <button onclick="openTab('dashboard')" id="nav-dashboard" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-bold brand-text">
+        <span class="text-lg">🏠</span><span>Inicio</span>
+      </button>
+      <button onclick="openTab('agenda')" id="nav-agenda" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-lg">📅</span><span>Agenda</span>
+      </button>
+      <button onclick="openTab('clients')" id="nav-clients" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-lg">👩‍🦰</span><span>Clientas</span>
+      </button>
+      <button onclick="openTab('services')" id="nav-services" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-lg">💅</span><span>Servicios</span>
+      </button>
+      <button onclick="openTab('inventory')" id="nav-inventory" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-lg">📦</span><span>Inventario</span>
+      </button>
+      <button onclick="openTab('settings')" id="nav-settings" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-lg">⚙️</span><span>Ajustes</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MODAL 1: SELECTOR DE COLOR EN MODO ESPECTRO -->
+  <div id="modal-color" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">🎨 Paleta de Color en Modo Espectro</h3>
+        <button onclick="closeModal('modal-color')" class="text-gray-400 hover:text-gray-700 font-bold text-lg">✕</button>
+      </div>
+      <p class="text-xs text-[#7D6B67]">Desliza el espectro continuo de 360° para elegir el color exacto de tu estudio:</p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-[#4A3B38] mb-1">Matiz del Espectro (0° - 360°)</label>
+          <input type="range" id="hue-slider" min="0" max="360" value="8" class="w-full spectrum-bar" oninput="updateSpectrumColor()" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-[#4A3B38] mb-1">Saturación</label>
+            <input type="range" id="sat-slider" min="25" max="95" value="38" class="w-full bg-gray-200" oninput="updateSpectrumColor()" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#4A3B38] mb-1">Luminosidad</label>
+            <input type="range" id="light-slider" min="25" max="65" value="55" class="w-full bg-gray-200" oninput="updateSpectrumColor()" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-[#4A3B38] mb-1.5">Tonos Editoriales Recomendados:</label>
+          <div class="flex flex-wrap gap-2.5">
+            <button type="button" onclick="applyHexColor('#B86B62')" class="w-8 h-8 rounded-full bg-[#B86B62] border-2 border-white shadow" title="Terracota Rose Original"></button>
+            <button type="button" onclick="applyHexColor('#e11d48')" class="w-8 h-8 rounded-full bg-[#e11d48] border-2 border-white shadow" title="Rosa Intenso"></button>
+            <button type="button" onclick="applyHexColor('#db2777')" class="w-8 h-8 rounded-full bg-[#db2777] border-2 border-white shadow" title="Fucsia"></button>
+            <button type="button" onclick="applyHexColor('#9333ea')" class="w-8 h-8 rounded-full bg-[#9333ea] border-2 border-white shadow" title="Lila"></button>
+            <button type="button" onclick="applyHexColor('#c27838')" class="w-8 h-8 rounded-full bg-[#c27838] border-2 border-white shadow" title="Dorado Bronce"></button>
+            <button type="button" onclick="applyHexColor('#0f766e')" class="w-8 h-8 rounded-full bg-[#0f766e] border-2 border-white shadow" title="Esmeralda"></button>
+            <button type="button" onclick="applyHexColor('#2C2220')" class="w-8 h-8 rounded-full bg-[#2C2220] border-2 border-white shadow" title="Espresso Luxury"></button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-2 border-t border-[#F0E6E3]">
+          <span class="text-xs font-bold text-[#4A3B38]">O elige del cuadro de espectro libre:</span>
+          <input type="color" id="native-color-picker" value="#B86B62" oninput="applyHexColor(this.value)" class="w-12 h-10 rounded-lg cursor-pointer border border-[#E8DCD8]" />
+        </div>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal('modal-color')" class="px-5 py-2.5 rounded-xl text-white text-xs font-bold brand-bg">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: REGISTRAR / EDITAR CLIENTA (CON FECHA DE ÚLTIMA CITA Y PRÓXIMO RETOQUE EN VIVO) -->
+  <div id="modal-client" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4 my-8">
+      <div class="flex items-center justify-between">
+        <h3 id="modal-client-title" class="font-serif-editorial text-2xl font-bold text-[#2C2220]">👩‍🦰 Registrar Clienta</h3>
+        <button onclick="closeModal('modal-client')" class="text-gray-400 hover:text-gray-700 font-bold text-lg">✕</button>
+      </div>
+      <form onsubmit="saveClientForm(event)" class="space-y-3.5">
+        <input type="hidden" id="client-id" />
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Nombre Completo *</label>
+          <input type="text" id="client-name" required placeholder="Ej: María Fernanda Gómez" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">País</label>
+            <select id="client-code" class="w-full px-2.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm">
+              <option value="+58">🇻🇪 +58</option>
+              <option value="+57">🇨🇴 +57</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+34">🇪🇸 +34</option>
+              <option value="+52">🇲🇽 +52</option>
+              <option value="+56">🇨🇱 +56</option>
+              <option value="+54">🇦🇷 +54</option>
+              <option value="+51">🇵🇪 +51</option>
+              <option value="+507">🇵🇦 +507</option>
+              <option value="+593">🇪🇨 +593</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Teléfono WhatsApp *</label>
+            <input type="tel" id="client-phone" required placeholder="4121234567" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Frecuencia de Retoque *</label>
+            <select id="client-freq" onchange="updateClientNextDatePreview()" class="w-full px-3 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-semibold">
+              <option value="15">Cada 15 días</option>
+              <option value="20" selected>Cada 20 días</option>
+              <option value="21">Cada 21 días</option>
+              <option value="30">Cada 30 días</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Fecha de Última Cita *</label>
+            <input type="date" id="client-last-date" required onchange="updateClientNextDatePreview()" class="w-full px-3 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-semibold" />
+          </div>
+        </div>
+        <div class="p-3 rounded-2xl brand-soft-bg border brand-border flex items-center justify-between">
+          <span class="text-xs font-bold text-[#4A3B38]">📅 Próximo retoque calculado:</span>
+          <span id="client-next-preview" class="text-xs font-extrabold brand-text">—</span>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Último Servicio Realizado</label>
+          <input type="text" id="client-last-service-name" placeholder="Ej: Sistema Soft Gel / Nivelación Rubber" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Alergias / Sensibilidad en Cutícula</label>
+          <input type="text" id="client-allergies" placeholder="Ej: Cutícula sensible, usar primer sin ácido" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Preferencias / Notas</label>
+          <input type="text" id="client-notes" placeholder="Ej: Almendra #2, tonos milky y nude" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-client')" class="px-4 py-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#6E5D59]">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-xs font-bold brand-bg">Guardar Clienta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: REGISTRAR TRABAJO REALIZADO -->
+  <div id="modal-service" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4 my-8">
+      <div class="flex items-center justify-between">
+        <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">💅 Registrar Trabajo Realizado</h3>
+        <button onclick="closeModal('modal-service')" class="text-gray-400 hover:text-gray-700 font-bold text-lg">✕</button>
+      </div>
+      <form onsubmit="saveServiceForm(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Clienta *</label>
+          <select id="service-client-id" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Servicio *</label>
+            <input type="text" id="service-type" required placeholder="Ej: Retoque Acrílico" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Fecha *</label>
+            <input type="date" id="service-date" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Monto Cobrado ($ USD) *</label>
+            <input type="number" step="0.01" id="service-price" required placeholder="20.00" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Método de Pago *</label>
+            <select id="service-payment" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm">
+              <option value="Efectivo USD">💵 Efectivo USD</option>
+              <option value="Pago Móvil">📱 Pago Móvil</option>
+              <option value="Zelle">💜 Zelle</option>
+              <option value="Transferencia">🏦 Transferencia</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Fórmula Técnica / Tonos Usados</label>
+          <input type="text" id="service-formula" placeholder="Ej: Base Rubber Milky + Francés Blanco + Top Coat" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Foto del Resultado (Opcional)</label>
+          <input type="file" id="service-photo" accept="image/*" class="w-full text-xs text-[#6E5D59]" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-service')" class="px-4 py-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#6E5D59]">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-xs font-bold brand-bg">Guardar Trabajo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: AGENDAR CITA FUTURA -->
+  <div id="modal-appointment" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">📅 Agendar Cita</h3>
+        <button onclick="closeModal('modal-appointment')" class="text-gray-400 hover:text-gray-700 font-bold text-lg">✕</button>
+      </div>
+      <form onsubmit="saveAppointmentForm(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Clienta *</label>
+          <select id="app-client-id" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Fecha de la Cita *</label>
+            <input type="date" id="app-date" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Hora *</label>
+            <input type="time" id="app-time" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Servicio a Realizar *</label>
+          <input type="text" id="app-service" required placeholder="Ej: Retoque Polygel + Diseño" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-appointment')" class="px-4 py-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#6E5D59]">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-xs font-bold brand-bg">Guardar Cita</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5: AGREGAR / EDITAR PRODUCTO EN INVENTARIO -->
+  <div id="modal-inventory-item" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4 my-8">
+      <div class="flex items-center justify-between">
+        <h3 id="modal-inv-title" class="font-serif-editorial text-2xl font-bold text-[#2C2220]">🧴 Agregar Producto al Inventario</h3>
+        <button onclick="closeModal('modal-inventory-item')" class="text-gray-400 hover:text-gray-700 font-bold text-lg">✕</button>
+      </div>
+      <form onsubmit="saveInventoryItemForm(event)" class="space-y-3.5">
+        <input type="hidden" id="inv-id" />
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Nombre del Insumo, Esmalte o Equipo *</label>
+          <input type="text" id="inv-name" required placeholder="Ej: Base Rubber Milky #02 - 15ml" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Categoría *</label>
+            <select id="inv-category" class="w-full px-3 py-2.5 rounded-xl border border-[#E8DCD8] text-sm">
+              <option value="Esmaltes & Geles">💅 Esmaltes & Geles</option>
+              <option value="Acrílicos & Polygel">✨ Acrílicos & Polygel</option>
+              <option value="Descartables & Limas">🧽 Descartables & Limas</option>
+              <option value="Líquidos & Preparadores">💧 Líquidos & Preparadores</option>
+              <option value="Equipos & Herramientas">⚡ Equipos & Herramientas</option>
+              <option value="Decoración & Cristales">💎 Decoración & Cristales</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Unidad</label>
+            <select id="inv-unit" class="w-full px-3 py-2.5 rounded-xl border border-[#E8DCD8] text-sm">
+              <option value="frascos">Frascos</option>
+              <option value="unidades">Unidades</option>
+              <option value="paquetes">Paquetes</option>
+              <option value="cajas">Cajas</option>
+              <option value="tarros">Tarros</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Cantidad Actual *</label>
+            <input type="number" step="1" id="inv-qty" required value="1" min="0" class="w-full px-3 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Mínimo Alerta *</label>
+            <input type="number" step="1" id="inv-min" required value="1" min="0" class="w-full px-3 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Costo Unit. ($)</label>
+            <input type="number" step="0.01" id="inv-cost" value="5.00" min="0" class="w-full px-3 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Marca / Ubicación / Nota (Opcional)</label>
+          <input type="text" id="inv-notes" placeholder="Ej: Gaveta 1, Marca Masglo / Organic" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div id="inv-also-expense-box" class="p-3.5 rounded-2xl brand-soft-bg border brand-border space-y-1">
+          <label class="flex items-center gap-2 text-xs font-bold text-[#2C2220] cursor-pointer">
+            <input type="checkbox" id="inv-also-expense" class="rounded" />
+            <span>🧾 Registrar también como Gasto / Inversión de este mes</span>
+          </label>
+          <p class="text-[11px] text-[#7D6B67]">Si lo marcas, se restará el costo total (Cantidad × Costo Unit.) de la ganancia del mes.</p>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-inventory-item')" class="px-4 py-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#6E5D59]">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-xs font-bold brand-bg">Guardar en Inventario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 6: REGISTRAR GASTO / INVERSIÓN CONECTADO AL INVENTARIO -->
+  <div id="modal-expense" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4 my-8">
+      <div class="flex items-center justify-between">
+        <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">🧾 Registrar Gasto o Inversión</h3>
+        <button onclick="closeModal('modal-expense')" class="text-gray-400 hover:text-gray-700 font-bold text-lg">✕</button>
+      </div>
+      <form onsubmit="saveExpenseForm(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">¿En qué se hizo el gasto o inversión? *</label>
+          <select id="exp-type" onchange="toggleExpenseInventoryFields()" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-semibold">
+            <option value="Compra de Insumos">🧴 Compra de Insumos / Material (Suma al Inventario)</option>
+            <option value="Inversión en Equipo">⚡ Inversión en Equipo / Herramientas (Suma al Inventario)</option>
+            <option value="Gasto Operativo">🏠 Gasto Operativo (Alquiler, Servicios, Publicidad)</option>
+          </select>
+        </div>
+
+        <div id="exp-inventory-box" class="p-3.5 rounded-2xl brand-soft-bg border brand-border space-y-3">
+          <span class="block text-xs font-extrabold text-[#2C2220]">📦 ¿Cómo deseas sumarlo a tu Inventario?</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btn-exp-mode-new" onclick="setExpenseStockMode('new')" class="py-2 px-2.5 rounded-xl text-xs font-bold bg-white border-2 brand-border brand-text shadow-sm">
+              + Producto Nuevo
+            </button>
+            <button type="button" id="btn-exp-mode-existing" onclick="setExpenseStockMode('existing')" class="py-2 px-2.5 rounded-xl text-xs font-bold bg-white border border-[#E8DCD8] text-[#6E5D59]">
+              🔄 Sumar a Existente
+            </button>
+          </div>
+          <input type="hidden" id="exp-stock-mode" value="new" />
+
+          <div id="exp-existing-product-box" class="hidden">
+            <label class="block text-[11px] font-bold uppercase text-[#6E5D59] mb-1">Elige el Producto de tu Inventario *</label>
+            <select id="exp-existing-id" onchange="onSelectExistingInventoryForExpense()" class="w-full px-3 py-2 rounded-xl border border-[#E8DCD8] text-xs font-semibold bg-white"></select>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-[#6E5D59] mb-1">Unidades *</label>
+              <input type="number" step="1" id="exp-stock-qty" value="1" min="1" class="w-full px-2.5 py-2 rounded-xl border border-[#E8DCD8] text-xs font-bold bg-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-[#6E5D59] mb-1">Unidad</label>
+              <select id="exp-stock-unit" class="w-full px-2 py-2 rounded-xl border border-[#E8DCD8] text-xs bg-white">
+                <option value="frascos">Frascos</option>
+                <option value="unidades">Unidades</option>
+                <option value="paquetes">Paquetes</option>
+                <option value="cajas">Cajas</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-[#6E5D59] mb-1">Categoría</label>
+              <select id="exp-stock-cat" class="w-full px-2 py-2 rounded-xl border border-[#E8DCD8] text-xs bg-white">
+                <option value="Esmaltes & Geles">Esmaltes</option>
+                <option value="Acrílicos & Polygel">Acrílicos</option>
+                <option value="Descartables & Limas">Limas/Desc.</option>
+                <option value="Líquidos & Preparadores">Líquidos</option>
+                <option value="Equipos & Herramientas">Equipos</option>
+                <option value="Decoración & Cristales">Decoración</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Descripción de lo Comprado o Invertido *</label>
+          <input type="text" id="exp-desc" required placeholder="Ej: 3 Bases Rubber Milky / Lámpara UV Sun 48W" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Monto Total ($ USD) *</label>
+            <input type="number" step="0.01" id="exp-amount" required placeholder="15.00" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Fecha *</label>
+            <input type="date" id="exp-date" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Pagado con</label>
+          <select id="exp-payment" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm">
+            <option value="Efectivo USD">💵 Efectivo USD</option>
+            <option value="Pago Móvil">📱 Pago Móvil</option>
+            <option value="Zelle">💜 Zelle</option>
+            <option value="Transferencia">🏦 Transferencia</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-expense')" class="px-4 py-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#6E5D59]">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-xs font-bold brand-bg">Guardar Gasto e Inventario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 7: FICHA TÉCNICA VISUAL DE LA CLIENTA -->
+  <div id="modal-sheet" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-[28px] max-w-lg w-full p-6 shadow-2xl space-y-4 my-8">
+      <div class="flex items-center justify-between">
+        <h3 id="sheet-client-name" class="font-serif-editorial text-2xl font-bold text-[#2C2220]">📋 Ficha Técnica de Clienta</h3>
+        <button onclick="closeModal('modal-sheet')" class="text-gray-400 hover:text-gray-700 font-bold text-lg">✕</button>
+      </div>
+      <div id="sheet-client-meta" class="text-xs space-y-1 p-3.5 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8]"></div>
+      <h4 class="font-bold text-xs uppercase text-[#8C7773]">Historial de Fórmulas y Fotos</h4>
+      <div id="sheet-history-list" class="space-y-2.5 max-h-80 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'nails_studio_editorial_v1';
+    let inventorySubView = 'all';
+
+    let state = {
+      user: {
+        email: '',
+        name: '',
+        phone: '',
+        address: 'Estudio Nails Studio',
+        policy: 'Tolerancia de 15 min. Avisar cambios con 24h de anticipación.',
+        template: '¡Hola {nombre}! ✨ Te escribo de *{estudio}* para recordarte que el *{fecha_ultimo}* te realizaste *{servicio}* y ya estás en fecha de tu retoque de {dias} días 💅. ¿Qué día y hora te gustaría agendar tu cita?',
+        customLogo: '', // vacio = usa el ícono editorial minimalista de uña almendrada de la captura
+        brandColor: '#B86B62'
+      },
+      isDemo: true,
+      clients: [],
+      services: [],
+      appointments: [],
+      inventory: [],
+      expenses: []
+    };
+
+    function getTodayISO() {
+      const d = new Date();
+      const offset = d.getTimezoneOffset() * 60000;
+      return new Date(d.getTime() - offset).toISOString().slice(0, 10);
+    }
+
+    function addDaysISO(isoDate, days) {
+      if (!isoDate) return getTodayISO();
+      const parts = isoDate.split('-').map(Number);
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      d.setDate(d.getDate() + Number(days));
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function diffDaysFromToday(targetISO) {
+      const todayParts = getTodayISO().split('-').map(Number);
+      const targetParts = targetISO.split('-').map(Number);
+      const t0 = new Date(todayParts[0], todayParts[1] - 1, todayParts[2]).getTime();
+      const t1 = new Date(targetParts[0], targetParts[1] - 1, targetParts[2]).getTime();
+      return Math.round((t1 - t0) / 86400000);
+    }
+
+    function formatHumanDate(isoDate) {
+      if (!isoDate) return '—';
+      const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const parts = isoDate.split('-');
+      if (parts.length !== 3) return isoDate;
+      return `${Number(parts[2])} ${months[Number(parts[1]) - 1]} ${parts[0]}`;
+    }
+
+    function seedDemoData() {
+      const today = getTodayISO();
+      const c1Last = addDaysISO(today, -20);
+      const c2Last = addDaysISO(today, -17);
+      const c3Last = addDaysISO(today, -19);
+      const c4Last = addDaysISO(today, -5);
+
+      state.clients = [
+        { id: 'c1', name: 'Valentina Rodríguez', code: '+58', phone: '4125551020', freq: 20, lastDate: c1Last, lastService: 'Sistema Soft Gel + Baby Boomer', allergies: 'Ninguna', notes: 'Almendra #2' },
+        { id: 'c2', name: 'Camila Mendoza', code: '+58', phone: '4145553040', freq: 15, lastDate: c2Last, lastService: 'Semipermanente Nivelación Rubber', allergies: 'Cutícula sensible', notes: 'Tonos pastel' },
+        { id: 'c3', name: 'Sofía Hernández', code: '+58', phone: '4245558090', freq: 21, lastDate: c3Last, lastService: 'Retoque Acrílico Esculpido', allergies: 'Ninguna', notes: 'Coffin #3' },
+        { id: 'c4', name: 'Andrea Morales', code: '+58', phone: '4125559911', freq: 30, lastDate: c4Last, lastService: 'Pedicura Spa + Manicura Rusa', allergies: 'Ninguna', notes: 'Rojo vino' }
+      ];
+
+      state.services = [
+        { id: 's1', clientId: 'c1', type: 'Sistema Soft Gel + Baby Boomer', date: c1Last, price: 25, payment: 'Efectivo USD', formula: 'Base Rubber Milky + Blanco Lechozo + Top Brillo', photo: '' },
+        { id: 's2', clientId: 'c2', type: 'Semipermanente Nivelación Rubber', date: c2Last, price: 18, payment: 'Pago Móvil', formula: 'Primer sin ácido + Base Rubber Rosa #04', photo: '' },
+        { id: 's3', clientId: 'c3', type: 'Retoque Acrílico Esculpido', date: c3Last, price: 22, payment: 'Zelle', formula: 'Acrílico Cover Nude + Efecto Aurora', photo: '' },
+        { id: 's4', clientId: 'c4', type: 'Pedicura Spa + Manicura Rusa', date: c4Last, price: 30, payment: 'Efectivo USD', formula: 'Rojo Ferrari #18 + Top Coat', photo: '' }
+      ];
+
+      state.appointments = [
+        { id: 'a1', clientId: 'c1', date: today, time: '15:00', service: 'Retoque Soft Gel (20 días)' },
+        { id: 'a2', clientId: 'c2', date: addDaysISO(today, 1), time: '10:30', service: 'Retoque Nivelación Rubber' }
+      ];
+
+      state.inventory = [
+        { id: 'i1', name: 'Base Rubber Milky 15ml', category: 'Esmaltes & Geles', qty: 3, min: 1, unit: 'frascos', cost: 6.50, notes: 'Gaveta principal' },
+        { id: 'i2', name: 'Top Coat No Wipe Brillo', category: 'Esmaltes & Geles', qty: 1, min: 2, unit: 'frascos', cost: 6.00, notes: 'Comprar repuesto pronto' },
+        { id: 'i3', name: 'Paquete Limas 100/180 OPI', category: 'Descartables & Limas', qty: 0, min: 1, unit: 'paquetes', cost: 4.50, notes: 'Urgente reponer' },
+        { id: 'i4', name: 'Monómero Bajo Olor 250ml', category: 'Líquidos & Preparadores', qty: 2, min: 1, unit: 'frascos', cost: 12.00, notes: 'Estante acrílicos' },
+        { id: 'i5', name: 'Lámpara UV/LED Sun 48W', category: 'Equipos & Herramientas', qty: 2, min: 1, unit: 'unidades', cost: 22.00, notes: 'Mesa 1 y Mesa 2' }
+      ];
+
+      state.expenses = [
+        { id: 'e1', type: 'Compra de Insumos', desc: 'Reposición Bases Rubber y Monómero', amount: 25.00, date: today, payment: 'Efectivo USD', qtyAdded: 3 },
+        { id: 'e2', type: 'Inversión en Equipo', desc: 'Fresas de Carburo y Puntas Diamante Rusa', amount: 14.00, date: today, payment: 'Pago Móvil', qtyAdded: 1 }
+      ];
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('nails_studio_manager_v5') || localStorage.getItem('nails_studio_manager_v4');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          state = Object.assign({}, state, parsed);
+          if (!state.inventory) state.inventory = [];
+          if (!state.expenses) state.expenses = [];
+          if (!state.user.brandColor) state.user.brandColor = '#B86B62';
+        } catch (e) {
+          seedDemoData();
+        }
+      } else {
+        seedDemoData();
+        saveState();
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getClientCycleInfo(client) {
+      const clientServices = state.services
+        .filter(s => s.clientId === client.id)
+        .sort((a, b) => b.date.localeCompare(a.date));
+
+      const lastDate = clientServices.length > 0 ? clientServices[0].date : (client.lastDate || getTodayISO());
+      const lastServiceName = clientServices.length > 0 ? clientServices[0].type : (client.lastService || 'Servicio de Manicura');
+      const freq = Number(client.freq) || 20;
+      const nextDate = addDaysISO(lastDate, freq);
+      const daysRemaining = diffDaysFromToday(nextDate);
+
+      return { lastDate, lastServiceName, freq, nextDate, daysRemaining };
+    }
+
+    function extractNameFromEmail(email) {
+      if (!email) return 'Valeria Nails Studio';
+      const local = email.split('@')[0];
+      return local
+        .replace(/[._-]+/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const customName = document.getElementById('login-name').value.trim();
+      const phone = document.getElementById('login-phone').value.trim();
+
+      state.user.email = email;
+      state.user.name = customName || extractNameFromEmail(email);
+      if (phone) state.user.phone = phone;
+
+      saveState();
+      document.getElementById('login-screen').classList.add('hidden');
+      renderAll();
+    }
+
+    function logoutAccount() {
+      document.getElementById('login-email').value = state.user.email || '';
+      document.getElementById('login-name').value = state.user.name || '';
+      document.getElementById('login-phone').value = state.user.phone || '';
+      document.getElementById('login-screen').classList.remove('hidden');
+    }
+
+    function applyHexColor(hex) {
+      state.user.brandColor = hex;
+      document.documentElement.style.setProperty('--brand', hex);
+      document.documentElement.style.setProperty('--brand-dark', hex);
+      document.documentElement.style.setProperty('--brand-light', hex + '24');
+      document.documentElement.style.setProperty('--brand-soft', hex + '14');
+      const meta = document.getElementById('meta-theme-color');
+      if (meta) meta.setAttribute('content', hex);
+      const picker = document.getElementById('native-color-picker');
+      if (picker) picker.value = hex;
+      saveState();
+    }
+
+    function hslToHex(h, s, l) {
+      l /= 100;
+      const a = s * Math.min(l, 1 - l) / 100;
+      const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+      };
+      return `#${f(0)}${f(8)}${f(4)}`;
+    }
+
+    function updateSpectrumColor() {
+      const h = Number(document.getElementById('hue-slider').value);
+      const s = Number(document.getElementById('sat-slider').value);
+      const l = Number(document.getElementById('light-slider').value);
+      applyHexColor(hslToHex(h, s, l));
+    }
+
+    function useIllustratedAppIcon() {
+      state.user.customLogo = 'icon-192.png';
+      saveState();
+      updateLogosUI();
+    }
+
+    function handleCustomLogoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.user.customLogo = reader.result;
+        saveState();
+        updateLogosUI();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetCustomLogo() {
+      state.user.customLogo = '';
+      saveState();
+      updateLogosUI();
+    }
+
+    function updateLogosUI() {
+      const hasCustom = Boolean(state.user.customLogo);
+      const loginVec = document.getElementById('login-vector-logo');
+      const loginImg = document.getElementById('login-custom-logo');
+      const headVec = document.getElementById('header-vector-logo');
+      const headImg = document.getElementById('header-custom-logo');
+      const setPrev = document.getElementById('settings-logo-preview');
+
+      if (hasCustom) {
+        loginVec.classList.add('hidden');
+        loginImg.src = state.user.customLogo;
+        loginImg.classList.remove('hidden');
+        headVec.classList.add('hidden');
+        headImg.src = state.user.customLogo;
+        headImg.classList.remove('hidden');
+        if (setPrev) setPrev.src = state.user.customLogo;
+      } else {
+        loginVec.classList.remove('hidden');
+        loginImg.classList.add('hidden');
+        headVec.classList.remove('hidden');
+        headImg.classList.add('hidden');
+        if (setPrev) setPrev.src = 'icon-192.png';
+      }
+    }
+
+    function buildClientWhatsAppLink(client) {
+      const info = getClientCycleInfo(client);
+      const msg = (state.user.template || '')
+        .replace(/\{nombre\}/g, client.name)
+        .replace(/\{dias\}/g, info.freq)
+        .replace(/\{fecha_ultimo\}/g, formatHumanDate(info.lastDate))
+        .replace(/\{servicio\}/g, info.lastServiceName)
+        .replace(/\{estudio\}/g, state.user.name || 'Nails Studio');
+      const cleanPhone = ((client.code || '+58') + client.phone).replace(/[^0-9]/g, '');
+      return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+    }
+
+    function enableNativeNotifications() {
+      if (!('Notification' in window)) {
+        alert('Este dispositivo no soporta notificaciones de navegador. Usa el botón verde para enviarte el reporte a tu WhatsApp.');
+        return;
+      }
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          const dueClients = state.clients
+            .map(c => ({ client: c, info: getClientCycleInfo(c) }))
+            .filter(x => x.info.daysRemaining <= 3);
+          const names = dueClients.map(x => x.client.name).join(', ') || 'Todas al día';
+          new Notification('💅 Recordatorio Nails Studio', {
+            body: dueClients.length > 0 ? `Clientas por atender (${dueClients.length}): ${names}` : 'Todas tus clientas están al día hoy.',
+            icon: 'icon-192.png'
+          });
+        }
+      });
+    }
+
+    function sendSelfSummaryWhatsApp() {
+      let phone = (state.user.phone || '').trim();
+      if (!phone) {
+        phone = prompt('Ingresa tu propio número de WhatsApp con código de país (ej: +584121234567) para recibir el resumen:', '+58');
+        if (!phone) return;
+        state.user.phone = phone;
+        saveState();
+      }
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const dueClients = state.clients
+        .map(c => ({ client: c, info: getClientCycleInfo(c) }))
+        .filter(x => x.info.daysRemaining <= 3)
+        .sort((a, b) => a.info.daysRemaining - b.info.daysRemaining);
+
+      let lines = [`📋 *RESUMEN DEL DÍA - ${(state.user.name || 'Nails Studio').toUpperCase()}* (${formatHumanDate(getTodayISO())})`, ''];
+      if (dueClients.length === 0) {
+        lines.push('✅ Ninguna clienta tiene retoque vencido hoy.');
+      } else {
+        lines.push(`🔔 *Clientas a las que les toca servicio (${dueClients.length}):*`);
+        dueClients.forEach(({ client, info }) => {
+          const status = info.daysRemaining < 0
+            ? `⚠️ Vencida hace ${Math.abs(info.daysRemaining)}d`
+            : (info.daysRemaining === 0 ? '🔥 LE TOCA HOY' : `⏳ En ${info.daysRemaining}d`);
+          lines.push(`• *${client.name}* (${client.code}${client.phone}) — ${status} | Última cita: ${formatHumanDate(info.lastDate)} | Próx. retoque: ${formatHumanDate(info.nextDate)}`);
+        });
+      }
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+    }
+
+    function sendShoppingListWhatsApp() {
+      let phone = (state.user.phone || '').trim();
+      if (!phone) {
+        phone = prompt('Ingresa tu número de WhatsApp con código de país (ej: +584121234567):', '+58');
+        if (!phone) return;
+        state.user.phone = phone;
+        saveState();
+      }
+      const lowItems = state.inventory.filter(i => Number(i.qty) <= Number(i.min));
+      if (lowItems.length === 0) {
+        alert('¡Todo tu inventario está completo! No hay insumos por agotarse.');
+        return;
+      }
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const lines = [
+        `🛒 *LISTA DE COMPRAS / INSUMOS POR REPONER - ${(state.user.name || 'Nails Studio').toUpperCase()}*`,
+        ...lowItems.map(i => `• *${i.name}* (${i.category}): Quedan ${i.qty} ${i.unit}`)
+      ];
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+    }
+
+    function quickMarkTouchUpToday(clientId) {
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+      client.lastDate = getTodayISO();
+      saveState();
+      renderAll();
+    }
+
+    function setInventorySubView(view) {
+      inventorySubView = view;
+      ['all', 'stock', 'expenses'].forEach(v => {
+        const btn = document.getElementById(`subtab-inv-${v}`);
+        if (v === view) {
+          btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold brand-bg text-white';
+        } else {
+          btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#6E5D59]';
+        }
+      });
+      document.getElementById('block-inventory-stock').classList.toggle('hidden', view === 'expenses');
+      document.getElementById('block-inventory-expenses').classList.toggle('hidden', view === 'stock');
+    }
+
+    function openTab(tabName) {
+      ['dashboard', 'agenda', 'clients', 'services', 'inventory', 'settings'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
+        const nav = document.getElementById(`nav-${t}`);
+        if (t === tabName) {
+          nav.classList.add('brand-text', 'font-bold');
+          nav.classList.remove('text-[#8C7773]');
+        } else {
+          nav.classList.remove('brand-text', 'font-bold');
+          nav.classList.add('text-[#8C7773]');
+        }
+      });
+      renderAll();
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function updateClientNextDatePreview() {
+      const freq = Number(document.getElementById('client-freq').value) || 20;
+      const lastDate = document.getElementById('client-last-date').value || getTodayISO();
+      const nextISO = addDaysISO(lastDate, freq);
+      document.getElementById('client-next-preview').textContent = `${formatHumanDate(nextISO)} (ciclo de ${freq} días)`;
+    }
+
+    function openClientModal(clientId = null) {
+      document.getElementById('client-id').value = clientId || '';
+      if (clientId) {
+        const c = state.clients.find(x => x.id === clientId);
+        const info = getClientCycleInfo(c);
+        document.getElementById('modal-client-title').textContent = '✏️ Editar Clienta';
+        document.getElementById('client-name').value = c.name;
+        document.getElementById('client-code').value = c.code || '+58';
+        document.getElementById('client-phone').value = c.phone;
+        document.getElementById('client-freq').value = c.freq || 20;
+        document.getElementById('client-last-date').value = info.lastDate;
+        document.getElementById('client-last-service-name').value = info.lastServiceName;
+        document.getElementById('client-allergies').value = c.allergies || '';
+        document.getElementById('client-notes').value = c.notes || '';
+      } else {
+        document.getElementById('modal-client-title').textContent = '👩‍🦰 Registrar Nueva Clienta';
+        document.getElementById('client-name').value = '';
+        document.getElementById('client-code').value = '+58';
+        document.getElementById('client-phone').value = '';
+        document.getElementById('client-freq').value = '20';
+        document.getElementById('client-last-date').value = getTodayISO();
+        document.getElementById('client-last-service-name').value = '';
+        document.getElementById('client-allergies').value = '';
+        document.getElementById('client-notes').value = '';
+      }
+      updateClientNextDatePreview();
+      openModal('modal-client');
+    }
+
+    function saveClientForm(e) {
+      e.preventDefault();
+      const id = document.getElementById('client-id').value;
+      const clientData = {
+        id: id || ('c_' + Date.now()),
+        name: document.getElementById('client-name').value.trim(),
+        code: document.getElementById('client-code').value,
+        phone: document.getElementById('client-phone').value.trim(),
+        freq: Number(document.getElementById('client-freq').value) || 20,
+        lastDate: document.getElementById('client-last-date').value || getTodayISO(),
+        lastService: document.getElementById('client-last-service-name').value.trim() || 'Servicio de Manicura',
+        allergies: document.getElementById('client-allergies').value.trim(),
+        notes: document.getElementById('client-notes').value.trim()
+      };
+      if (id) {
+        const idx = state.clients.findIndex(c => c.id === id);
+        if (idx !== -1) state.clients[idx] = clientData;
+      } else {
+        state.clients.unshift(clientData);
+      }
+      saveState();
+      closeModal('modal-client');
+      renderAll();
+    }
+
+    function deleteClient(clientId) {
+      if (!confirm('¿Eliminar esta clienta?')) return;
+      state.clients = state.clients.filter(c => c.id !== clientId);
+      saveState();
+      renderAll();
+    }
+
+    function populateClientSelects() {
+      const options = state.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('service-client-id').innerHTML = options || '<option value="">Primero registra una clienta</option>';
+      document.getElementById('app-client-id').innerHTML = options || '<option value="">Primero registra una clienta</option>';
+    }
+
+    function openServiceModal(defaultClientId = null) {
+      populateClientSelects();
+      if (defaultClientId) document.getElementById('service-client-id').value = defaultClientId;
+      document.getElementById('service-type').value = '';
+      document.getElementById('service-date').value = getTodayISO();
+      document.getElementById('service-price').value = '';
+      document.getElementById('service-formula').value = '';
+      document.getElementById('service-photo').value = '';
+      openModal('modal-service');
+    }
+
+    function compressImageFile(file, callback) {
+      if (!file) { callback(''); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxW = 480;
+          const scale = Math.min(1, maxW / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          callback(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveServiceForm(e) {
+      e.preventDefault();
+      const clientId = document.getElementById('service-client-id').value;
+      if (!clientId) { alert('Selecciona o crea una clienta primero.'); return; }
+      const type = document.getElementById('service-type').value.trim();
+      const date = document.getElementById('service-date').value;
+      const price = Number(document.getElementById('service-price').value) || 0;
+      const payment = document.getElementById('service-payment').value;
+      const formula = document.getElementById('service-formula').value.trim();
+      const file = document.getElementById('service-photo').files[0];
+
+      compressImageFile(file, photoData => {
+        state.services.unshift({
+          id: 's_' + Date.now(),
+          clientId,
+          type,
+          date,
+          price,
+          payment,
+          formula,
+          photo: photoData
+        });
+        const client = state.clients.find(c => c.id === clientId);
+        if (client) {
+          client.lastDate = date;
+          client.lastService = type;
+        }
+        saveState();
+        closeModal('modal-service');
+        renderAll();
+      });
+    }
+
+    let calendarYear = new Date().getFullYear();
+    let calendarMonth = new Date().getMonth(); // 0-11
+    let selectedCalendarDate = getTodayISO();
+    let dayHourViewMode = 'timeline'; // 'timeline' | 'booked'
+
+    function formatTime12h(time24) {
+      if (!time24) return '';
+      const parts = time24.split(':');
+      let h = parseInt(parts[0], 10);
+      const m = parts[1] || '00';
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      if (h === 0) h = 12;
+      return `${h}:${m} ${ampm}`;
+    }
+
+    function changeCalendarMonth(delta) {
+      calendarMonth += delta;
+      if (calendarMonth > 11) {
+        calendarMonth = 0;
+        calendarYear++;
+      } else if (calendarMonth < 0) {
+        calendarMonth = 11;
+        calendarYear--;
+      }
+      const ym = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
+      const today = getTodayISO();
+      if (today.startsWith(ym)) {
+        selectedCalendarDate = today;
+      } else {
+        selectedCalendarDate = `${ym}-01`;
+      }
+      renderAppointments();
+    }
+
+    function goToTodayCalendar() {
+      const now = new Date();
+      calendarYear = now.getFullYear();
+      calendarMonth = now.getMonth();
+      selectedCalendarDate = getTodayISO();
+      renderAppointments();
+    }
+
+    function selectCalendarDay(isoDate) {
+      selectedCalendarDate = isoDate;
+      const parts = isoDate.split('-').map(Number);
+      calendarYear = parts[0];
+      calendarMonth = parts[1] - 1;
+      renderAppointments();
+    }
+
+    function setDayHourViewMode(mode) {
+      dayHourViewMode = mode;
+      const btnTimeline = document.getElementById('btn-hour-view-all');
+      const btnBooked = document.getElementById('btn-hour-view-booked');
+      if (mode === 'timeline') {
+        btnTimeline.className = 'flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold brand-bg text-white';
+        btnBooked.className = 'flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold text-[#6E5D59]';
+      } else {
+        btnBooked.className = 'flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold brand-bg text-white';
+        btnTimeline.className = 'flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold text-[#6E5D59]';
+      }
+      renderAppointments();
+    }
+
+    function deleteAppointment(appId) {
+      if (!confirm('¿Cancelar y eliminar esta cita de la agenda?')) return;
+      state.appointments = state.appointments.filter(a => a.id !== appId);
+      saveState();
+      renderAll();
+    }
+
+    function openAppointmentModal(prefillDate = null, prefillTime = null) {
+      populateClientSelects();
+      document.getElementById('app-date').value = prefillDate || selectedCalendarDate || getTodayISO();
+      document.getElementById('app-time').value = prefillTime || '14:00';
+      document.getElementById('app-service').value = '';
+      openModal('modal-appointment');
+    }
+
+    function saveAppointmentForm(e) {
+      e.preventDefault();
+      const clientId = document.getElementById('app-client-id').value;
+      if (!clientId) return;
+      const appDate = document.getElementById('app-date').value;
+      const appTime = document.getElementById('app-time').value;
+      state.appointments.push({
+        id: 'a_' + Date.now(),
+        clientId,
+        date: appDate,
+        time: appTime,
+        service: document.getElementById('app-service').value.trim()
+      });
+      if (appDate) {
+        selectedCalendarDate = appDate;
+        const parts = appDate.split('-').map(Number);
+        calendarYear = parts[0];
+        calendarMonth = parts[1] - 1;
+      }
+      saveState();
+      closeModal('modal-appointment');
+      renderAll();
+    }
+
+    function completeAppointment(appId) {
+      const app = state.appointments.find(a => a.id === appId);
+      if (!app) return;
+      const priceStr = prompt(`¿Cuánto cobraste por "${app.service}" ($ USD)?`, '20');
+      if (priceStr === null) return;
+      state.services.unshift({
+        id: 's_' + Date.now(),
+        clientId: app.clientId,
+        type: app.service,
+        date: app.date,
+        price: Number(priceStr) || 0,
+        payment: 'Efectivo USD',
+        formula: '',
+        photo: ''
+      });
+      const client = state.clients.find(c => c.id === app.clientId);
+      if (client) {
+        client.lastDate = app.date;
+        client.lastService = app.service;
+      }
+      state.appointments = state.appointments.filter(a => a.id !== appId);
+      saveState();
+      renderAll();
+    }
+
+    function openInventoryItemModal(invId = null) {
+      document.getElementById('inv-id').value = invId || '';
+      const alsoExpenseBox = document.getElementById('inv-also-expense-box');
+      if (invId) {
+        const item = state.inventory.find(i => i.id === invId);
+        document.getElementById('modal-inv-title').textContent = '✏️ Editar Producto del Inventario';
+        document.getElementById('inv-name').value = item.name;
+        document.getElementById('inv-category').value = item.category;
+        document.getElementById('inv-unit').value = item.unit;
+        document.getElementById('inv-qty').value = item.qty;
+        document.getElementById('inv-min').value = item.min;
+        document.getElementById('inv-cost').value = item.cost;
+        document.getElementById('inv-notes').value = item.notes || '';
+        alsoExpenseBox.classList.add('hidden');
+        document.getElementById('inv-also-expense').checked = false;
+      } else {
+        document.getElementById('modal-inv-title').textContent = '🧴 Agregar Producto al Inventario';
+        document.getElementById('inv-name').value = '';
+        document.getElementById('inv-category').value = 'Esmaltes & Geles';
+        document.getElementById('inv-unit').value = 'frascos';
+        document.getElementById('inv-qty').value = 1;
+        document.getElementById('inv-min').value = 1;
+        document.getElementById('inv-cost').value = 5.00;
+        document.getElementById('inv-notes').value = '';
+        alsoExpenseBox.classList.remove('hidden');
+        document.getElementById('inv-also-expense').checked = false;
+      }
+      openModal('modal-inventory-item');
+    }
+
+    function saveInventoryItemForm(e) {
+      e.preventDefault();
+      const id = document.getElementById('inv-id').value;
+      const qty = Number(document.getElementById('inv-qty').value) || 0;
+      const cost = Number(document.getElementById('inv-cost').value) || 0;
+      const name = document.getElementById('inv-name').value.trim();
+      const category = document.getElementById('inv-category').value;
+
+      const itemData = {
+        id: id || ('i_' + Date.now()),
+        name,
+        category,
+        unit: document.getElementById('inv-unit').value,
+        qty,
+        min: Number(document.getElementById('inv-min').value) || 1,
+        cost,
+        notes: document.getElementById('inv-notes').value.trim()
+      };
+      if (id) {
+        const idx = state.inventory.findIndex(i => i.id === id);
+        if (idx !== -1) state.inventory[idx] = itemData;
+      } else {
+        state.inventory.unshift(itemData);
+        if (document.getElementById('inv-also-expense').checked && qty > 0 && cost > 0) {
+          state.expenses.unshift({
+            id: 'e_' + Date.now(),
+            type: category === 'Equipos & Herramientas' ? 'Inversión en Equipo' : 'Compra de Insumos',
+            desc: `${name} (x${qty})`,
+            amount: Number((qty * cost).toFixed(2)),
+            date: getTodayISO(),
+            payment: 'Efectivo USD',
+            qtyAdded: qty
+          });
+        }
+      }
+      saveState();
+      closeModal('modal-inventory-item');
+      renderAll();
+    }
+
+    function deleteInventoryItem(id) {
+      if (!confirm('¿Eliminar este producto del inventario?')) return;
+      state.inventory = state.inventory.filter(i => i.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    function adjustInventoryStock(id, delta) {
+      const item = state.inventory.find(i => i.id === id);
+      if (!item) return;
+      item.qty = Math.max(0, Number(item.qty) + delta);
+      saveState();
+      renderAll();
+    }
+
+    function setExpenseStockMode(mode) {
+      document.getElementById('exp-stock-mode').value = mode;
+      const btnNew = document.getElementById('btn-exp-mode-new');
+      const btnEx = document.getElementById('btn-exp-mode-existing');
+      const exBox = document.getElementById('exp-existing-product-box');
+
+      if (mode === 'existing') {
+        btnEx.className = 'py-2 px-2.5 rounded-xl text-xs font-bold bg-white border-2 brand-border brand-text shadow-sm';
+        btnNew.className = 'py-2 px-2.5 rounded-xl text-xs font-bold bg-white border border-[#E8DCD8] text-[#6E5D59]';
+        exBox.classList.remove('hidden');
+        populateExistingInventorySelect();
+        onSelectExistingInventoryForExpense();
+      } else {
+        btnNew.className = 'py-2 px-2.5 rounded-xl text-xs font-bold bg-white border-2 brand-border brand-text shadow-sm';
+        btnEx.className = 'py-2 px-2.5 rounded-xl text-xs font-bold bg-white border border-[#E8DCD8] text-[#6E5D59]';
+        exBox.classList.add('hidden');
+        document.getElementById('exp-desc').value = '';
+      }
+    }
+
+    function populateExistingInventorySelect() {
+      const sel = document.getElementById('exp-existing-id');
+      if (state.inventory.length === 0) {
+        sel.innerHTML = '<option value="">No hay productos en stock aún</option>';
+        return;
+      }
+      sel.innerHTML = state.inventory.map(i => `<option value="${i.id}">${i.name} (Tienes: ${i.qty} ${i.unit})</option>`).join('');
+    }
+
+    function onSelectExistingInventoryForExpense() {
+      const id = document.getElementById('exp-existing-id').value;
+      const item = state.inventory.find(i => i.id === id);
+      if (item) {
+        document.getElementById('exp-desc').value = item.name;
+        document.getElementById('exp-stock-unit').value = item.unit;
+        document.getElementById('exp-stock-cat').value = item.category;
+      }
+    }
+
+    function openExpenseModal() {
+      document.getElementById('exp-type').value = 'Compra de Insumos';
+      document.getElementById('exp-desc').value = '';
+      document.getElementById('exp-amount').value = '';
+      document.getElementById('exp-date').value = getTodayISO();
+      document.getElementById('exp-stock-qty').value = 1;
+      setExpenseStockMode('new');
+      toggleExpenseInventoryFields();
+      openModal('modal-expense');
+    }
+
+    function toggleExpenseInventoryFields() {
+      const type = document.getElementById('exp-type').value;
+      const box = document.getElementById('exp-inventory-box');
+      if (type === 'Gasto Operativo') {
+        box.classList.add('hidden');
+      } else {
+        box.classList.remove('hidden');
+        if (type === 'Inversión en Equipo') {
+          document.getElementById('exp-stock-cat').value = 'Equipos & Herramientas';
+          document.getElementById('exp-stock-unit').value = 'unidades';
+        }
+      }
+    }
+
+    function saveExpenseForm(e) {
+      e.preventDefault();
+      const type = document.getElementById('exp-type').value;
+      const desc = document.getElementById('exp-desc').value.trim();
+      const amount = Number(document.getElementById('exp-amount').value) || 0;
+      const date = document.getElementById('exp-date').value;
+      const payment = document.getElementById('exp-payment').value;
+      const qty = Number(document.getElementById('exp-stock-qty').value) || 1;
+
+      state.expenses.unshift({
+        id: 'e_' + Date.now(),
+        type,
+        desc,
+        amount,
+        date,
+        payment,
+        qtyAdded: type !== 'Gasto Operativo' ? qty : 0
+      });
+
+      if (type !== 'Gasto Operativo') {
+        const mode = document.getElementById('exp-stock-mode').value;
+        const unit = document.getElementById('exp-stock-unit').value;
+        const cat = document.getElementById('exp-stock-cat').value;
+        const unitCost = Number((amount / Math.max(1, qty)).toFixed(2));
+
+        if (mode === 'existing') {
+          const exId = document.getElementById('exp-existing-id').value;
+          const existing = state.inventory.find(i => i.id === exId);
+          if (existing) {
+            existing.qty = Number(existing.qty) + qty;
+            if (unitCost > 0) existing.cost = unitCost;
+          }
+        } else {
+          const byName = state.inventory.find(i => i.name.toLowerCase() === desc.toLowerCase());
+          if (byName) {
+            byName.qty = Number(byName.qty) + qty;
+          } else {
+            state.inventory.unshift({
+              id: 'i_' + Date.now(),
+              name: desc,
+              category: cat,
+              qty,
+              min: 1,
+              unit,
+              cost: unitCost,
+              notes: `Adquirido el ${formatHumanDate(date)}`
+            });
+          }
+        }
+      }
+      saveState();
+      closeModal('modal-expense');
+      renderAll();
+    }
+
+    function deleteExpense(id) {
+      if (!confirm('¿Eliminar este registro de gasto?')) return;
+      state.expenses = state.expenses.filter(e => e.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    function openClientSheet(clientId) {
+      const c = state.clients.find(x => x.id === clientId);
+      if (!c) return;
+      const info = getClientCycleInfo(c);
+      document.getElementById('sheet-client-name').textContent = `📋 Ficha Técnica: ${c.name}`;
+      document.getElementById('sheet-client-meta').innerHTML = `
+        <p><strong>Teléfono:</strong> ${c.code} ${c.phone} | <strong>Frecuencia:</strong> Cada ${info.freq} días</p>
+        <p><strong>Última cita:</strong> ${formatHumanDate(info.lastDate)} | <strong>Próximo retoque:</strong> <span class="brand-text font-bold">${formatHumanDate(info.nextDate)}</span></p>
+        <p><strong>Alergias / Sensibilidad:</strong> ${c.allergies || 'Ninguna registrada'}</p>
+        <p><strong>Preferencias:</strong> ${c.notes || 'Sin notas adicionales'}</p>
+      `;
+      const clientServices = state.services.filter(s => s.clientId === clientId).sort((a, b) => b.date.localeCompare(a.date));
+      document.getElementById('sheet-history-list').innerHTML = clientServices.length === 0
+        ? '<p class="text-xs text-[#8C7773]">Aún no hay servicios detallados registrados para esta clienta.</p>'
+        : clientServices.map(s => `
+          <div class="p-3 rounded-2xl border border-[#E8DCD8] flex gap-3 items-start">
+            ${s.photo ? `<img src="${s.photo}" class="w-16 h-16 rounded-xl object-cover border" />` : ''}
+            <div class="text-xs flex-1">
+              <div class="flex justify-between font-bold text-[#2C2220]">
+                <span>${s.type}</span>
+                <span>$${Number(s.price).toFixed(2)}</span>
+              </div>
+              <p class="text-[#7D6B67]">${formatHumanDate(s.date)} • ${s.payment}</p>
+              ${s.formula ? `<p class="mt-1 text-[#4A3B38] brand-soft-bg px-2 py-1 rounded-lg">🧪 <strong>Fórmula:</strong> ${s.formula}</p>` : ''}
+            </div>
+          </div>
+        `).join('');
+      openModal('modal-sheet');
+    }
+
+    function clearDemoData() {
+      if (!confirm('¿Limpiar los datos de ejemplo para empezar a registrar las clientas reales desde cero?')) return;
+      state.isDemo = false;
+      state.clients = [];
+      state.services = [];
+      state.appointments = [];
+      state.inventory = [];
+      state.expenses = [];
+      saveState();
+      renderAll();
+    }
+
+    function saveSettingsForm(e) {
+      e.preventDefault();
+      state.user.email = document.getElementById('set-email').value.trim();
+      state.user.name = document.getElementById('set-name').value.trim();
+      state.user.phone = document.getElementById('set-phone').value.trim();
+      state.user.address = document.getElementById('set-address').value.trim();
+      state.user.policy = document.getElementById('set-policy').value.trim();
+      state.user.template = document.getElementById('set-template').value.trim();
+      saveState();
+      renderAll();
+      alert('¡Ajustes guardados correctamente!');
+    }
+
+    function exportBackupJSON() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `respaldo-nails-studio-${getTodayISO()}.json`;
+      a.click();
+    }
+
+    function importBackupJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          state = JSON.parse(reader.result);
+          saveState();
+          renderAll();
+          alert('¡Respaldo restaurado con éxito!');
+        } catch (err) {
+          alert('El archivo seleccionado no es un respaldo válido.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function onMonthFilterChange() {
+      renderDashboard();
+      renderServices();
+      renderInventoryAndExpenses();
+    }
+
+    function getCurrentMonthPrefix() {
+      const filterEl = document.getElementById('filter-month');
+      if (filterEl && filterEl.value) return filterEl.value;
+      return getTodayISO().slice(0, 7);
+    }
+
+    function renderDashboard() {
+      const monthPrefix = getCurrentMonthPrefix();
+      const monthServices = state.services.filter(s => (s.date || '').startsWith(monthPrefix));
+      const monthExpenses = state.expenses.filter(x => (x.date || '').startsWith(monthPrefix));
+
+      const gross = monthServices.reduce((acc, s) => acc + (Number(s.price) || 0), 0);
+      const totalExp = monthExpenses.reduce((acc, x) => acc + (Number(x.amount) || 0), 0);
+      const net = gross - totalExp;
+
+      document.getElementById('stat-gross').textContent = `$${gross.toFixed(2)}`;
+      document.getElementById('stat-services-count').textContent = `${monthServices.length} servicios este mes`;
+      document.getElementById('stat-expenses').textContent = `-$${totalExp.toFixed(2)}`;
+      document.getElementById('stat-inventory-count').textContent = `${state.inventory.length} productos en stock`;
+      document.getElementById('stat-net').textContent = `$${net.toFixed(2)}`;
+
+      const evaluatedClients = state.clients
+        .map(c => ({ client: c, info: getClientCycleInfo(c) }))
+        .sort((a, b) => a.info.daysRemaining - b.info.daysRemaining);
+
+      const dueClients = evaluatedClients.filter(x => x.info.daysRemaining <= 3);
+      document.getElementById('stat-due-count').textContent = dueClients.length;
+
+      const dueContainer = document.getElementById('manicurist-due-list');
+      if (dueClients.length === 0) {
+        dueContainer.innerHTML = `
+          <div class="bg-[#FDFBF9] rounded-2xl p-4 text-xs text-[#7D6B67] border border-[#E8DCD8] flex items-center justify-between">
+            <span>✅ Ninguna clienta tiene retoque vencido hoy. Todas tus clientas están al día.</span>
+            <button onclick="openTab('clients')" class="font-bold brand-text">Ver directorio →</button>
+          </div>
+        `;
+      } else {
+        dueContainer.innerHTML = dueClients.map(({ client, info }) => {
+          const badge = info.daysRemaining < 0
+            ? `<span class="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-extrabold text-[11px]">⚠️ Vencida hace ${Math.abs(info.daysRemaining)} días</span>`
+            : (info.daysRemaining === 0
+                ? `<span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[11px]">🔥 LE TOCA HOY</span>`
+                : `<span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[11px]">⏳ En ${info.daysRemaining} días</span>`);
+          return `
+            <div class="bg-[#FDFBF9] rounded-2xl p-4 border border-[#E8DCD8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-extrabold text-[#2C2220] text-sm">${client.name}</span>
+                  ${badge}
+                  <span class="text-[11px] font-bold text-[#7D6B67]">• Retoque cada ${info.freq} días</span>
+                </div>
+                <p class="text-xs text-[#5C4B47]">
+                  📅 <strong>Última cita:</strong> ${formatHumanDate(info.lastDate)} (${info.lastServiceName})
+                  → <strong>Próximo retoque:</strong> <span class="font-extrabold brand-text">${formatHumanDate(info.nextDate)}</span>
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <a href="${buildClientWhatsAppLink(client)}" target="_blank" class="px-3.5 py-2 rounded-xl bg-[#1F8A5B] hover:bg-[#186F48] text-white text-xs font-bold shadow-sm flex items-center gap-1">
+                  <span>💬</span><span>Enviar WhatsApp</span>
+                </a>
+                <button onclick="quickMarkTouchUpToday('${client.id}')" class="px-3 py-2 rounded-xl bg-white border border-[#E8DCD8] hover:bg-[#FBF4F3] text-xs font-bold text-[#4A3B38]">
+                  ✅ Atendida Hoy
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const methods = ['Efectivo USD', 'Pago Móvil', 'Zelle', 'Transferencia'];
+      document.getElementById('payment-methods-breakdown').innerHTML = methods.map(m => {
+        const sum = monthServices.filter(s => s.payment === m).reduce((a, b) => a + (Number(b.price) || 0), 0);
+        return `
+          <div class="p-3 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex items-center justify-between">
+            <span class="font-semibold text-[#6E5D59]">${m}</span>
+            <span class="font-extrabold text-[#2C2220]">$${sum.toFixed(2)}</span>
+          </div>
+        `;
+      }).join('');
+
+      const upcoming = [...state.appointments].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).slice(0, 3);
+      document.getElementById('dashboard-upcoming-appointments').innerHTML = upcoming.length === 0
+        ? '<p class="text-[#8C7773]">No hay citas reservadas próximamente.</p>'
+        : upcoming.map(a => {
+            const client = state.clients.find(c => c.id === a.clientId);
+            return `
+              <div class="p-3 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex items-center justify-between">
+                <div>
+                  <p class="font-bold text-[#2C2220]">${client ? client.name : 'Clienta'} • ${a.service}</p>
+                  <p class="text-[#7D6B67]">${formatHumanDate(a.date)} a las ${a.time}</p>
+                </div>
+                <button onclick="completeAppointment('${a.id}')" class="px-3 py-1.5 rounded-xl bg-[#E3F7EC] text-[#155E3D] font-bold">Completar</button>
+              </div>
+            `;
+          }).join('');
+    }
+
+    function renderAppointments() {
+      const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      const ymPrefix = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
+      const todayISO = getTodayISO();
+
+      // Actualizar título del mes y conteo
+      const titleEl = document.getElementById('calendar-month-title');
+      const subEl = document.getElementById('calendar-month-subtitle');
+      const monthApps = state.appointments
+        .filter(a => (a.date || '').startsWith(ymPrefix))
+        .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+      if (titleEl) titleEl.textContent = `${monthNames[calendarMonth]} ${calendarYear}`;
+      if (subEl) subEl.textContent = `${monthApps.length} cita(s) agendada(s) en ${monthNames[calendarMonth]}`;
+
+      // Construir cuadrícula del calendario mensual (Lunes = 0 ... Domingo = 6)
+      const gridEl = document.getElementById('calendar-days-grid');
+      if (gridEl) {
+        const firstDayDate = new Date(calendarYear, calendarMonth, 1);
+        const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+        const startOffset = (firstDayDate.getDay() + 6) % 7; // Ajuste para que la semana empiece en Lunes
+
+        let cellsHTML = '';
+        for (let i = 0; i < startOffset; i++) {
+          cellsHTML += `<div class="h-14 sm:h-16 rounded-2xl bg-[#FDFBF9]/50 border border-transparent"></div>`;
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const iso = `${ymPrefix}-${String(day).padStart(2, '0')}`;
+          const dayApps = state.appointments
+            .filter(a => a.date === iso)
+            .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+          const isSelected = iso === selectedCalendarDate;
+          const isToday = iso === todayISO;
+
+          let boxClasses = 'bg-[#FDFBF9] border-[#E8DCD8] text-[#2C2220] hover:border-[#B86B62]';
+          if (isSelected) {
+            boxClasses = 'brand-bg text-white border-transparent shadow-md scale-[1.02]';
+          } else if (isToday) {
+            boxClasses = 'bg-amber-50/80 border-amber-400 text-[#2C2220]';
+          } else if (dayApps.length > 0) {
+            boxClasses = 'brand-soft-bg brand-border text-[#2C2220]';
+          }
+
+          let indicatorsHTML = '';
+          if (dayApps.length > 0) {
+            const firstTime = formatTime12h(dayApps[0].time).replace(' ', '');
+            indicatorsHTML = `
+              <div class="mt-0.5 flex flex-col items-center">
+                <span class="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold leading-tight ${isSelected ? 'bg-white/25 text-white' : 'brand-bg text-white'}">
+                  ${dayApps.length} ${dayApps.length === 1 ? 'cita' : 'citas'}
+                </span>
+                <span class="text-[9px] font-bold truncate max-w-full hidden sm:inline ${isSelected ? 'text-white/90' : 'brand-text'}">${firstTime}</span>
+              </div>
+            `;
+          } else if (isToday) {
+            indicatorsHTML = `<span class="text-[9px] font-extrabold ${isSelected ? 'text-white/90' : 'text-amber-700'}">HOY</span>`;
+          }
+
+          cellsHTML += `
+            <button type="button" onclick="selectCalendarDay('${iso}')" class="h-14 sm:h-16 p-1 rounded-2xl border transition flex flex-col items-center justify-between ${boxClasses}">
+              <span class="text-xs sm:text-sm font-extrabold">${day}</span>
+              ${indicatorsHTML}
+            </button>
+          `;
+        }
+        gridEl.innerHTML = cellsHTML;
+      }
+
+      // Renderizar el panel derecho: Vista por Día y por Hora
+      const dayTitleEl = document.getElementById('selected-day-title');
+      const dayCountEl = document.getElementById('selected-day-count');
+      const dayBadgeEl = document.getElementById('selected-day-badge');
+      const hourlyContainer = document.getElementById('day-hourly-schedule');
+
+      const selectedDayApps = state.appointments
+        .filter(a => a.date === selectedCalendarDate)
+        .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+      if (dayTitleEl) dayTitleEl.textContent = formatHumanDate(selectedCalendarDate);
+      if (dayBadgeEl) dayBadgeEl.textContent = selectedCalendarDate === todayISO ? '🔥 HOY' : 'DÍA SELECCIONADO';
+      if (dayCountEl) {
+        dayCountEl.textContent = selectedDayApps.length === 0
+          ? 'Día libre — Toca cualquier hora para agendar'
+          : `${selectedDayApps.length} cita(s) agendada(s) en este día`;
+      }
+
+      if (hourlyContainer) {
+        if (dayHourViewMode === 'booked') {
+          if (selectedDayApps.length === 0) {
+            hourlyContainer.innerHTML = `
+              <div class="p-6 rounded-2xl bg-[#FDFBF9] border border-dashed border-[#E8DCD8] text-center space-y-2">
+                <p class="text-xs text-[#8C7773]">No hay citas registradas para el ${formatHumanDate(selectedCalendarDate)}.</p>
+                <button onclick="openAppointmentModal('${selectedCalendarDate}', '10:00')" class="px-3.5 py-2 rounded-xl brand-bg text-white text-xs font-bold shadow-sm">
+                  + Agendar Cita en este Día
+                </button>
+              </div>
+            `;
+          } else {
+            hourlyContainer.innerHTML = selectedDayApps.map(a => renderHourlyAppointmentCard(a)).join('');
+          }
+        } else {
+          // Cronograma hora por hora desde las 08:00 hasta las 20:00 + horas extraordinarias si existen
+          const baseHours = ['08','09','10','11','12','13','14','15','16','17','18','19','20'];
+          const usedHours = selectedDayApps.map(a => (a.time || '09:00').slice(0, 2));
+          const allHours = Array.from(new Set([...baseHours, ...usedHours])).sort();
+
+          hourlyContainer.innerHTML = allHours.map(hStr => {
+            const appsInHour = selectedDayApps.filter(a => (a.time || '').startsWith(hStr + ':'));
+            const hourLabel = formatTime12h(`${hStr}:00`);
+
+            if (appsInHour.length > 0) {
+              return `
+                <div class="p-3 rounded-2xl brand-soft-bg border-2 brand-border space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold brand-text">⏰ ${hourLabel}</span>
+                    <button onclick="openAppointmentModal('${selectedCalendarDate}', '${hStr}:30')" class="text-[10px] font-bold text-[#6E5D59] hover:underline">+ Otra en esta hora</button>
+                  </div>
+                  <div class="space-y-2">
+                    ${appsInHour.map(a => renderHourlyAppointmentCard(a)).join('')}
+                  </div>
+                </div>
+              `;
+            } else {
+              return `
+                <div onclick="openAppointmentModal('${selectedCalendarDate}', '${hStr}:00')" class="px-3.5 py-2.5 rounded-2xl bg-[#FDFBF9] hover:bg-[#FBF4F3] border border-[#E8DCD8] flex items-center justify-between cursor-pointer transition group">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-xs font-bold text-[#7D6B67] w-16">${hourLabel}</span>
+                    <span class="text-[11px] text-[#A3918D] group-hover:text-[#4A3B38]">Disponible</span>
+                  </div>
+                  <span class="text-[11px] font-bold brand-text opacity-80 group-hover:opacity-100">+ Agendar</span>
+                </div>
+              `;
+            }
+          }).join('');
+        }
+      }
+
+      // Renderizar el listado inferior con todas las citas del mes
+      const list = document.getElementById('appointments-list');
+      if (!list) return;
+      if (monthApps.length === 0) {
+        list.innerHTML = `<div class="p-6 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] text-center text-xs text-[#8C7773]">No tienes citas agendadas en ${monthNames[calendarMonth]} ${calendarYear}.</div>`;
+        return;
+      }
+      list.innerHTML = monthApps.map(a => {
+        const client = state.clients.find(c => c.id === a.clientId);
+        const clientName = client ? client.name : 'Clienta';
+        const phone = client ? ((client.code || '+58') + client.phone).replace(/[^0-9]/g, '') : '';
+        const confirmMsg = `¡Hola ${clientName}! ✨ Te confirmo tu cita en *${state.user.name || 'Nails Studio'}* para el día *${formatHumanDate(a.date)}* a las *${formatTime12h(a.time)}* (${a.service}).\n📍 Dirección: ${state.user.address}\n📌 Nota: ${state.user.policy}`;
+        return `
+          <div class="p-4 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex flex-wrap items-center justify-between gap-3">
+            <div class="cursor-pointer" onclick="selectCalendarDay('${a.date}')">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-lg brand-soft-bg brand-text font-extrabold text-xs">⏰ ${formatTime12h(a.time)}</span>
+                <h4 class="font-extrabold text-[#2C2220] text-sm">${clientName} — ${a.service}</h4>
+              </div>
+              <p class="text-xs text-[#7D6B67] mt-1">📅 ${formatHumanDate(a.date)}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <a href="https://wa.me/${phone}?text=${encodeURIComponent(confirmMsg)}" target="_blank" class="px-3 py-2 rounded-xl bg-[#1F8A5B] text-white text-xs font-bold">
+                📍 Confirmar WhatsApp
+              </a>
+              <button onclick="completeAppointment('${a.id}')" class="px-3 py-2 rounded-xl brand-bg text-white text-xs font-bold">
+                ✅ Completar
+              </button>
+              <button onclick="deleteAppointment('${a.id}')" class="px-2.5 py-2 rounded-xl border border-[#E8DCD8] text-xs text-rose-600 hover:bg-rose-50" title="Cancelar cita">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHourlyAppointmentCard(a) {
+      const client = state.clients.find(c => c.id === a.clientId);
+      const clientName = client ? client.name : 'Clienta';
+      const phone = client ? ((client.code || '+58') + client.phone).replace(/[^0-9]/g, '') : '';
+      const confirmMsg = `¡Hola ${clientName}! ✨ Te confirmo tu cita en *${state.user.name || 'Nails Studio'}* para el día *${formatHumanDate(a.date)}* a las *${formatTime12h(a.time)}* (${a.service}).\n📍 Dirección: ${state.user.address}\n📌 Nota: ${state.user.policy}`;
+      return `
+        <div class="bg-white rounded-xl p-3 border border-[#E8DCD8] shadow-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="inline-block px-2 py-0.5 rounded-md brand-bg text-white text-[10px] font-extrabold mb-1">
+                ${formatTime12h(a.time)}
+              </span>
+              <h5 class="font-extrabold text-[#2C2220] text-xs sm:text-sm leading-snug">${clientName}</h5>
+              <p class="text-xs text-[#6E5D59]">💅 ${a.service}</p>
+            </div>
+            <button onclick="deleteAppointment('${a.id}')" class="text-xs text-gray-400 hover:text-rose-600" title="Eliminar cita">✕</button>
+          </div>
+          <div class="flex flex-wrap gap-1.5 pt-1 border-t border-[#F0E6E3]">
+            <a href="https://wa.me/${phone}?text=${encodeURIComponent(confirmMsg)}" target="_blank" class="flex-1 text-center py-1.5 px-2 rounded-lg bg-[#1F8A5B] text-white text-[11px] font-bold">
+              💬 Confirmar
+            </a>
+            <button onclick="completeAppointment('${a.id}')" class="flex-1 py-1.5 px-2 rounded-lg brand-bg text-white text-[11px] font-bold">
+              ✅ Terminar
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderClients() {
+      const q = (document.getElementById('client-search').value || '').toLowerCase();
+      const filtered = state.clients.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.phone || '').includes(q) ||
+        (c.notes || '').toLowerCase().includes(q)
+      );
+      const container = document.getElementById('clients-list');
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="col-span-2 card-luxury rounded-[28px] p-8 text-center text-xs text-[#8C7773]">No se encontraron clientas registradas.</div>';
+        return;
+      }
+      container.innerHTML = filtered.map(c => {
+        const info = getClientCycleInfo(c);
+        const statusBadge = info.daysRemaining < 0
+          ? `<span class="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[11px]">⚠️ Vencida (${Math.abs(info.daysRemaining)}d)</span>`
+          : (info.daysRemaining === 0
+              ? `<span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[11px]">🔥 Toca HOY</span>`
+              : `<span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px]">En ${info.daysRemaining} días</span>`);
+        return `
+          <div class="card-luxury rounded-[26px] p-5 space-y-3.5">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h4 class="font-serif-editorial font-bold text-[#2C2220] text-2xl leading-tight">${c.name}</h4>
+                <p class="text-xs text-[#7D6B67]">📱 ${c.code || '+58'} ${c.phone}</p>
+              </div>
+              ${statusBadge}
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-center bg-[#FDFBF9] p-3 rounded-2xl border border-[#E8DCD8]">
+              <div>
+                <p class="text-[10px] font-bold uppercase text-[#8C7773]">Frecuencia</p>
+                <p class="text-xs font-extrabold text-[#2C2220]">Cada ${info.freq}d</p>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold uppercase text-[#8C7773]">Última Cita</p>
+                <p class="text-xs font-extrabold text-[#2C2220]">${formatHumanDate(info.lastDate)}</p>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold uppercase text-[#8C7773]">Próx. Retoque</p>
+                <p class="text-xs font-extrabold brand-text">${formatHumanDate(info.nextDate)}</p>
+              </div>
+            </div>
+
+            <div class="text-xs text-[#5C4B47] space-y-0.5">
+              <p>💅 <strong>Último servicio:</strong> ${info.lastServiceName}</p>
+              ${c.allergies ? `<p class="text-rose-700">⚠️ <strong>Alergias:</strong> ${c.allergies}</p>` : ''}
+              ${c.notes ? `<p>📝 <strong>Notas:</strong> ${c.notes}</p>` : ''}
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#F0E6E3]">
+              <a href="${buildClientWhatsAppLink(c)}" target="_blank" class="flex-1 text-center py-2 px-3 rounded-xl bg-[#1F8A5B] hover:bg-[#186F48] text-white text-xs font-bold">
+                💬 Avisar Retoque
+              </a>
+              <button onclick="quickMarkTouchUpToday('${c.id}')" class="py-2 px-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3]" title="Actualizar fecha a hoy">
+                🔄 Hoy
+              </button>
+              <button onclick="openClientSheet('${c.id}')" class="py-2 px-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3]">
+                📋 Ficha
+              </button>
+              <button onclick="openClientModal('${c.id}')" class="py-2 px-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3]">
+                ✏️
+              </button>
+              <button onclick="deleteClient('${c.id}')" class="py-2 px-2 rounded-xl text-xs text-rose-600 hover:bg-rose-50">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderServices() {
+      const monthPrefix = getCurrentMonthPrefix();
+      const list = state.services
+        .filter(s => (s.date || '').startsWith(monthPrefix))
+        .sort((a, b) => b.date.localeCompare(a.date));
+      const container = document.getElementById('services-list');
+      if (list.length === 0) {
+        container.innerHTML = '<div class="card-luxury rounded-[28px] p-8 text-center text-xs text-[#8C7773]">No hay trabajos registrados en este mes.</div>';
+        return;
+      }
+      container.innerHTML = list.map(s => {
+        const client = state.clients.find(c => c.id === s.clientId);
+        return `
+          <div class="card-luxury rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              ${s.photo ? `<img src="${s.photo}" class="w-14 h-14 rounded-xl object-cover border border-[#E8DCD8]" />` : `<div class="w-12 h-12 rounded-xl brand-soft-bg brand-text flex items-center justify-center font-bold text-lg">💅</div>`}
+              <div>
+                <h4 class="font-extrabold text-[#2C2220] text-sm">${client ? client.name : 'Clienta'} — ${s.type}</h4>
+                <p class="text-xs text-[#7D6B67]">${formatHumanDate(s.date)} • ${s.payment}</p>
+                ${s.formula ? `<p class="text-xs text-[#5C4B47] mt-0.5">🧪 ${s.formula}</p>` : ''}
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="font-serif-editorial font-bold text-[#2C2220] text-2xl">$${Number(s.price).toFixed(2)}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderInventoryAndExpenses() {
+      const q = (document.getElementById('inventory-search').value || '').toLowerCase();
+      const catFilter = document.getElementById('inventory-category-filter') ? document.getElementById('inventory-category-filter').value : 'ALL';
+
+      const filteredInv = state.inventory.filter(i => {
+        const matchesText = i.name.toLowerCase().includes(q) || (i.category || '').toLowerCase().includes(q) || (i.notes || '').toLowerCase().includes(q);
+        if (!matchesText) return false;
+        if (catFilter === 'ALL') return true;
+        if (catFilter === 'LOW') return Number(i.qty) <= Number(i.min);
+        return i.category === catFilter;
+      });
+
+      const lowCount = state.inventory.filter(i => Number(i.qty) <= Number(i.min)).length;
+      const totalStockValue = state.inventory.reduce((acc, i) => acc + ((Number(i.qty) || 0) * (Number(i.cost) || 0)), 0);
+      const monthPrefix = getCurrentMonthPrefix();
+      const monthExp = state.expenses.filter(x => (x.date || '').startsWith(monthPrefix));
+      const totalExp = monthExp.reduce((a, b) => a + (Number(b.amount) || 0), 0);
+
+      document.getElementById('inv-total-items').textContent = state.inventory.length;
+      document.getElementById('inv-total-value').textContent = `$${totalStockValue.toFixed(2)}`;
+      document.getElementById('inv-low-items').textContent = lowCount;
+      document.getElementById('inv-month-expenses').textContent = `$${totalExp.toFixed(2)}`;
+
+      const invContainer = document.getElementById('inventory-list');
+      invContainer.innerHTML = filteredInv.length === 0
+        ? '<p class="text-xs text-[#8C7773] col-span-2 py-4 text-center">No hay productos registrados en esta categoría.</p>'
+        : filteredInv.map(i => {
+            const isOut = Number(i.qty) === 0;
+            const isLow = Number(i.qty) > 0 && Number(i.qty) <= Number(i.min);
+            const badge = isOut
+              ? '<span class="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-extrabold">¡AGOTADO!</span>'
+              : (isLow
+                  ? '<span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">POR AGOTARSE</span>'
+                  : '<span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">EN STOCK</span>');
+            const totalItemVal = (Number(i.qty) || 0) * (Number(i.cost) || 0);
+            return `
+              <div class="p-4 rounded-2xl border ${isOut ? 'border-rose-200 bg-rose-50/30' : (isLow ? 'border-amber-200 bg-amber-50/30' : 'border-[#E8DCD8] bg-[#FDFBF9]')} flex flex-col justify-between gap-3">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <h4 class="font-extrabold text-[#2C2220] text-sm">${i.name}</h4>
+                      ${badge}
+                    </div>
+                    <p class="text-xs text-[#7D6B67] mt-0.5">${i.category} • Costo unit: $${Number(i.cost || 0).toFixed(2)} (Valor: $${totalItemVal.toFixed(2)})</p>
+                    ${i.notes ? `<p class="text-[11px] text-[#8C7773] mt-0.5">📌 ${i.notes}</p>` : ''}
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button onclick="openInventoryItemModal('${i.id}')" class="p-1.5 rounded-lg text-xs text-[#6E5D59] hover:bg-white" title="Editar">✏️</button>
+                    <button onclick="deleteInventoryItem('${i.id}')" class="p-1.5 rounded-lg text-xs text-rose-600 hover:bg-rose-50" title="Eliminar">🗑️</button>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-[#E8DCD8]">
+                  <span class="text-[11px] text-[#7D6B67]">Avisar en ≤ <strong>${i.min} ${i.unit}</strong></span>
+                  <div class="flex items-center gap-2">
+                    <button onclick="adjustInventoryStock('${i.id}', -1)" class="w-8 h-8 rounded-xl bg-white border border-[#E8DCD8] font-extrabold text-sm flex items-center justify-center">-</button>
+                    <span class="font-extrabold text-sm min-w-[70px] text-center">${i.qty} <span class="text-[11px] font-semibold text-[#7D6B67]">${i.unit}</span></span>
+                    <button onclick="adjustInventoryStock('${i.id}', 1)" class="w-8 h-8 rounded-xl brand-bg text-white font-extrabold text-sm flex items-center justify-center">+</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+      const expContainer = document.getElementById('expenses-list');
+      expContainer.innerHTML = monthExp.length === 0
+        ? '<p class="text-xs text-[#8C7773] py-3 text-center">No hay gastos o inversiones registrados en este mes.</p>'
+        : monthExp.map(x => {
+            const typeBadge = x.type === 'Inversión en Equipo'
+              ? '<span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-bold">⚡ Inversión Equipo</span>'
+              : (x.type === 'Compra de Insumos'
+                  ? '<span class="px-2 py-0.5 rounded-md brand-soft-bg brand-text text-[10px] font-bold">🧴 Compra Insumos</span>'
+                  : '<span class="px-2 py-0.5 rounded-md bg-gray-200 text-gray-700 text-[10px] font-bold">🏠 Gasto Operativo</span>');
+            return `
+              <div class="p-3.5 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex items-center justify-between text-xs gap-2">
+                <div class="space-y-0.5">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-extrabold text-[#2C2220] text-sm">${x.desc}</span>
+                    ${typeBadge}
+                    ${x.qtyAdded ? `<span class="text-[11px] font-bold text-[#1B724B]">(+${x.qtyAdded} al inventario)</span>` : ''}
+                  </div>
+                  <p class="text-[#7D6B67]">📅 ${formatHumanDate(x.date)} ${x.payment ? `• 💳 ${x.payment}` : ''}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="font-serif-editorial font-bold text-[#C94A4A] text-xl">-$${Number(x.amount).toFixed(2)}</span>
+                  <button onclick="deleteExpense('${x.id}')" class="p-1.5 rounded-lg text-[#8C7773] hover:text-rose-600">🗑️</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+    }
+
+    function renderHeaderAndSettings() {
+      const displayName = state.user.name || 'Valeria Nails Studio';
+      document.getElementById('header-studio-title').textContent = displayName;
+      document.getElementById('header-user-email').textContent = state.user.email || 'Estudio & Agenda Pro';
+      document.getElementById('welcome-greeting').textContent = `Hola, ${displayName} ✨`;
+      document.getElementById('today-date-badge').textContent = `Hoy: ${formatHumanDate(getTodayISO())}`;
+      document.getElementById('demo-banner').classList.toggle('hidden', !state.isDemo);
+
+      document.getElementById('set-email').value = state.user.email || '';
+      document.getElementById('set-name').value = state.user.name || '';
+      document.getElementById('set-phone').value = state.user.phone || '';
+      document.getElementById('set-address').value = state.user.address || '';
+      document.getElementById('set-policy').value = state.user.policy || '';
+      document.getElementById('set-template').value = state.user.template || '';
+
+      updateLogosUI();
+      if (state.user.brandColor) {
+        applyHexColor(state.user.brandColor);
+      }
+    }
+
+    function renderAll() {
+      renderHeaderAndSettings();
+      renderDashboard();
+      renderAppointments();
+      renderClients();
+      renderServices();
+      renderInventoryAndExpenses();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      const filterEl = document.getElementById('filter-month');
+      if (filterEl) filterEl.value = getTodayISO().slice(0, 7);
+
+      if (!state.user.email) {
+        document.getElementById('login-screen').classList.remove('hidden');
+      }
+      renderAll();
+    });
+  </script>
+</body>
+</html>
