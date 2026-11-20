@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nails-studio-editorial-v100';
+const CACHE_NAME = 'nails-studio-editorial-v105';
 const ASSETS = [
   '/',
   '/index.html',
@@ -22,9 +22,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network-First: siempre intenta cargar el último archivo subido a Netlify y actualiza el caché
+// Solo interceptar archivos propios del mismo dominio (deja libre a Firebase Firestore en tiempo real)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
@@ -32,6 +35,8 @@ self.addEventListener('fetch', (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         return networkResponse;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+      .catch(() =>
+        caches.match(event.request, { ignoreSearch: true }).then((cached) => cached || caches.match('/index.html'))
+      )
   );
 });

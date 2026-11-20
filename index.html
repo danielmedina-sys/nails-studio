@@ -18,20 +18,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase Cloud SDK (Tiempo Real para Reservas Online & Sincronización) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script>
-    // Registro de Service Worker con limpieza automática de cachés antiguos (v1-v5)
     if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
       window.addEventListener('load', async () => {
         try {
           if ('caches' in window) {
             const keys = await caches.keys();
             for (const k of keys) {
-              if (k !== 'nails-studio-editorial-v100') {
+              if (k !== 'nails-studio-editorial-v105') {
                 await caches.delete(k);
               }
             }
           }
-          const reg = await navigator.serviceWorker.register('sw.js?v=100');
+          const reg = await navigator.serviceWorker.register('sw.js?v=105');
           reg.update();
         } catch (err) {}
       });
@@ -89,6 +91,24 @@
       border: 1px solid #F0E6E3;
       box-shadow: 0 10px 30px -12px rgba(184, 107, 98, 0.10);
     }
+    /* Bloqueo total de carteles externos como Powered by Netlify */
+    netlify-drawer,
+    #netlify-drawer,
+    [data-netlify-deploy-drawer],
+    iframe[src*="app.netlify.com"],
+    div[class*="netlify-drawer"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      z-index: -9999 !important;
+    }
+    body.public-booking-mode #admin-app-shell,
+    body.public-booking-mode #login-screen {
+      display: none !important;
+    }
   </style>
 </head>
 <body class="min-h-screen pb-28">
@@ -135,6 +155,157 @@
     </div>
   </div>
 
+  <!-- ===================================================================== -->
+  <!-- PORTAL PÚBLICO DE RESERVAS PARA CLIENTAS (?reservar=1)                -->
+  <!-- ===================================================================== -->
+  <div id="public-booking-view" class="hidden min-h-screen bg-[#FDFBF9] pb-16">
+    <!-- Encabezado de Marca del Estudio -->
+    <div class="bg-white/95 backdrop-blur-md border-b border-[#F0E6E3] sticky top-0 z-30">
+      <div class="max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div id="pub-vector-logo" class="w-11 h-11 rounded-2xl brand-bg flex items-center justify-center shadow-sm">
+            <svg class="w-6 h-6 text-white" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M32 10C22 10 16 24 16 37C16 48.5 23 54 32 54C41 54 48 48.5 48 37C48 24 42 10 32 10Z" stroke="currentColor" stroke-width="4" fill="rgba(255,255,255,0.18)"/>
+              <path d="M49 14L51 18L55 20L51 22L49 26L47 22L43 20L47 18L49 14Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <img id="pub-custom-logo" src="" alt="Logo Estudio" class="w-11 h-11 rounded-2xl object-cover shadow-sm border border-[#E8DCD8] hidden" />
+          <div>
+            <span class="inline-block text-[9px] font-extrabold uppercase tracking-widest brand-text">RESERVA ONLINE OFICIAL</span>
+            <h1 id="pub-studio-name" class="font-serif-editorial font-bold text-[#2C2220] text-2xl leading-none">Nails Studio</h1>
+          </div>
+        </div>
+        <span id="pub-cloud-badge" class="px-2.5 py-1 rounded-full bg-[#F2FBF6] border border-[#C6E9D6] text-[10px] font-bold text-[#155E3D]">
+          ● Cupos en vivo
+        </span>
+      </div>
+    </div>
+
+    <div class="max-w-xl mx-auto px-4 pt-5 space-y-5">
+      <!-- Info de Dirección y Políticas -->
+      <div class="card-luxury rounded-[26px] p-4 sm:p-5 space-y-2">
+        <h2 class="font-serif-editorial text-2xl sm:text-3xl font-bold text-[#2C2220]">Agenda tu cita en segundos ✨</h2>
+        <p id="pub-studio-address" class="text-xs text-[#5C4B47] font-medium">📍 Estudio Nails Studio</p>
+        <p id="pub-studio-policy" class="text-[11px] text-[#8C7773] bg-[#FDFBF9] px-3 py-2 rounded-xl border border-[#F0E6E3]">📌 Tolerancia de 15 min. Avisar cambios con 24h de anticipación.</p>
+      </div>
+
+      <!-- Contenedor del Formulario Paso a Paso -->
+      <form id="pub-booking-form" onsubmit="submitPublicBooking(event)" class="space-y-5">
+        <!-- PASO 1: ELEGIR SERVICIO -->
+        <div class="card-luxury rounded-[26px] p-5 space-y-3.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider brand-text">Paso 1 de 3</span>
+            <span class="text-[11px] text-[#8C7773]">Toca para elegir</span>
+          </div>
+          <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">💅 ¿Qué servicio deseas realizarte?</h3>
+          <div id="pub-services-grid" class="grid grid-cols-1 gap-2.5"></div>
+        </div>
+
+        <!-- PASO 2: ELEGIR FECHA Y HORA DISPONIBLE -->
+        <div class="card-luxury rounded-[26px] p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider brand-text">Paso 2 de 3</span>
+            <span class="text-[11px] text-[#8C7773]">Horarios disponibles en tiempo real</span>
+          </div>
+          <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">📅 Selecciona Fecha y Hora</h3>
+
+          <!-- Navegador de Mes Público -->
+          <div class="flex items-center justify-between bg-[#FDFBF9] px-3 py-2 rounded-2xl border border-[#E8DCD8]">
+            <button type="button" onclick="changePublicMonth(-1)" class="w-9 h-9 rounded-xl bg-white border border-[#E8DCD8] font-extrabold text-[#2C2220] shadow-sm">‹</button>
+            <div class="text-center">
+              <p id="pub-cal-month-title" class="font-serif-editorial text-2xl font-bold text-[#2C2220] capitalize">Mes</p>
+            </div>
+            <button type="button" onclick="changePublicMonth(1)" class="w-9 h-9 rounded-xl bg-white border border-[#E8DCD8] font-extrabold text-[#2C2220] shadow-sm">›</button>
+          </div>
+
+          <!-- Cabecera de Semana -->
+          <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold uppercase text-[#8C7773]">
+            <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div class="brand-text">Dom</div>
+          </div>
+          <div id="pub-cal-days-grid" class="grid grid-cols-7 gap-1.5"></div>
+
+          <!-- Horas Disponibles del Día Seleccionado -->
+          <div class="pt-3 border-t border-[#F0E6E3] space-y-2.5">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-extrabold text-[#2C2220]">⏰ Horas libres para el <span id="pub-selected-date-label" class="brand-text">—</span>:</p>
+            </div>
+            <div id="pub-hours-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+          </div>
+        </div>
+
+        <!-- PASO 3: DATOS DE LA CLIENTA -->
+        <div class="card-luxury rounded-[26px] p-5 space-y-3.5">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider brand-text">Paso 3 de 3</span>
+          <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">👩‍🦰 Tus Datos para la Reserva</h3>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Tu Nombre y Apellido *</label>
+            <input type="text" id="pub-client-name" required placeholder="Ej: Sofía Alejandra Pérez" class="w-full px-4 py-3 rounded-2xl border border-[#E8DCD8] bg-[#FDFBF9] focus:bg-white focus:outline-none focus:border-[#B86B62] text-sm" />
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">País</label>
+              <select id="pub-client-code" class="w-full px-2.5 py-3 rounded-2xl border border-[#E8DCD8] bg-[#FDFBF9] text-sm">
+                <option value="+58">🇻🇪 +58</option>
+                <option value="+57">🇨🇴 +57</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+34">🇪🇸 +34</option>
+                <option value="+52">🇲🇽 +52</option>
+                <option value="+56">🇨🇱 +56</option>
+                <option value="+54">🇦🇷 +54</option>
+                <option value="+51">🇵🇪 +51</option>
+                <option value="+507">🇵🇦 +507</option>
+                <option value="+593">🇪🇨 +593</option>
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Tu Número de WhatsApp *</label>
+              <input type="tel" id="pub-client-phone" required placeholder="4121234567" class="w-full px-4 py-3 rounded-2xl border border-[#E8DCD8] bg-[#FDFBF9] focus:bg-white focus:outline-none focus:border-[#B86B62] text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Comentario o Detalle Opcional</label>
+            <input type="text" id="pub-client-notes" placeholder="Ej: Necesito retiro previo / Diseño francés" class="w-full px-4 py-3 rounded-2xl border border-[#E8DCD8] bg-[#FDFBF9] focus:bg-white focus:outline-none focus:border-[#B86B62] text-sm" />
+          </div>
+
+          <!-- Resumen Previo antes de Confirmar -->
+          <div id="pub-summary-preview" class="p-3.5 rounded-2xl brand-soft-bg border brand-border text-xs space-y-1">
+            <p class="font-extrabold text-[#2C2220]">📋 Resumen de tu selección:</p>
+            <p id="pub-summary-text" class="text-[#5C4B47]">Selecciona un servicio, día y hora arriba.</p>
+          </div>
+
+          <button type="submit" id="pub-submit-btn" class="w-full py-4 rounded-2xl text-white font-bold text-sm shadow-lg brand-bg brand-bg-hover transition">
+            ✨ Confirmar y Agendar mi Cita
+          </button>
+        </div>
+      </form>
+
+      <!-- PANTALLA DE ÉXITO AL CONFIRMAR LA CITA -->
+      <div id="pub-success-card" class="hidden card-luxury rounded-[30px] p-6 sm:p-8 text-center space-y-4 border-2 border-[#C6E9D6]">
+        <div class="w-16 h-16 rounded-full bg-[#E3F7EC] text-[#155E3D] flex items-center justify-center text-3xl mx-auto shadow-sm">✓</div>
+        <span class="inline-block px-3 py-1 rounded-full bg-[#E3F7EC] text-[#155E3D] text-[10px] font-extrabold uppercase tracking-widest">RESERVA REGISTRADA EN AGENDA</span>
+        <h3 class="font-serif-editorial text-3xl font-bold text-[#2C2220]">¡Tu cita quedó agendada! ✨</h3>
+        <p class="text-xs text-[#5C4B47]">Ya apartamos tu cupo automáticamente en el calendario del estudio.</p>
+        <div id="pub-success-details" class="p-4 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] text-left text-xs space-y-1.5"></div>
+        <div class="space-y-2.5 pt-2">
+          <a id="pub-whatsapp-voucher-btn" href="#" target="_blank" class="hidden w-full py-3.5 px-4 rounded-2xl bg-[#1F8A5B] hover:bg-[#186F48] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2">
+            <span>📲</span><span>Enviar comprobante por WhatsApp al Estudio</span>
+          </a>
+          <button type="button" onclick="resetPublicBookingForm()" class="w-full py-3 px-4 rounded-2xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38]">
+            Agendar otra cita
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APLICACIÓN PRIVADA DE LA MANICURISTA                                  -->
+  <!-- ===================================================================== -->
+  <div id="admin-app-shell">
+
   <!-- BARRA SUPERIOR EDITORIAL -->
   <header class="sticky top-0 z-30 bg-[#FDFBF9]/95 backdrop-blur-md border-b border-[#F0E6E3]">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
@@ -148,7 +319,10 @@
         <img id="header-custom-logo" src="" alt="Logo" class="w-11 h-11 rounded-2xl object-cover shadow-sm border border-[#E8DCD8] hidden" />
         <div>
           <h1 id="header-studio-title" class="font-serif-editorial font-bold text-[#2C2220] text-xl leading-none">Nails Studio</h1>
-          <p id="header-user-email" class="text-[11px] text-[#7D6B67] truncate max-w-[160px] sm:max-w-xs mt-0.5">Agenda & Inventario Pro</p>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <p id="header-user-email" class="text-[11px] text-[#7D6B67] truncate max-w-[125px] sm:max-w-xs">Agenda & Inventario Pro</p>
+            <span id="cloud-sync-indicator" class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#F2FBF6] text-[#155E3D] text-[9px] font-extrabold" title="Conectado a Firebase en tiempo real">☁️ Online</span>
+          </div>
         </div>
       </div>
 
@@ -170,6 +344,24 @@
   <!-- CONTENEDOR PRINCIPAL -->
   <main class="max-w-5xl mx-auto px-4 pt-4 space-y-5">
 
+    <!-- ALERTA EN TIEMPO REAL DE NUEVAS CITAS AGENDADAS POR CLIENTAS DESDE EL LINK -->
+    <div id="online-booking-alert" class="hidden bg-[#F2FBF6] border-2 border-[#26855A] rounded-[24px] p-4 shadow-sm space-y-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🎉</span>
+          <div>
+            <h3 class="font-extrabold text-[#155E3D] text-xs sm:text-sm">¡Nueva Cita Agendada desde tu Link Público!</h3>
+            <p class="text-[11px] text-[#1B724B]">Tus clientas reservaron automáticamente y ya están en tu calendario</p>
+          </div>
+        </div>
+        <button onclick="markAllOnlineBookingsRead()" class="px-3 py-1.5 rounded-xl bg-white border border-[#C6E9D6] text-[11px] font-bold text-[#155E3D] hover:bg-[#E3F7EC]">
+          ✓ Marcar vistas
+        </button>
+      </div>
+      <div id="online-booking-alert-list" class="space-y-2"></div>
+    </div>
+
+    <!-- TARJETA RÁPIDA DE ACCESO AL LINK PÚBLICO EN EL PANEL -->
     <!-- BANNER DE DATOS DE EJEMPLO -->
     <div id="demo-banner" class="hidden bg-[#FFF8EB] border border-[#F2DEC2] rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#735123]">
       <div class="flex items-center gap-2">
@@ -193,8 +385,11 @@
           <button onclick="enableNativeNotifications()" class="px-3.5 py-2.5 rounded-xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3] flex items-center gap-1.5">
             <span>🔔</span><span>Alertas en Teléfono</span>
           </button>
+          <button onclick="openTab('booking')" class="px-3.5 py-2.5 rounded-xl brand-soft-bg brand-text border brand-border text-xs font-extrabold flex items-center gap-1.5">
+            <span>🔗</span><span>Mi Link de Citas & Catálogo</span>
+          </button>
           <button onclick="sendSelfSummaryWhatsApp()" class="px-4 py-2.5 rounded-xl bg-[#1F8A5B] hover:bg-[#186F48] text-white text-xs font-bold shadow-sm flex items-center gap-1.5">
-            <span>📲</span><span>Enviarme resumen del día a mi WhatsApp</span>
+            <span>📲</span><span>Enviarme resumen a WhatsApp</span>
           </button>
         </div>
       </div>
@@ -480,6 +675,101 @@
       </div>
     </section>
 
+    <!-- PESTAÑA ESPECIAL: LINK DE RESERVAS ONLINE, CATÁLOGO DE SERVICIOS Y HORARIOS -->
+    <section id="tab-booking" class="space-y-5 hidden">
+      <!-- Tarjeta Principal del Link Público -->
+      <div class="card-luxury rounded-[28px] p-5 sm:p-6 border-2 brand-border space-y-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <span class="inline-block text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full brand-soft-bg brand-text mb-1.5">RESERVAS AUTOMÁTICAS 24/7</span>
+            <h2 class="font-serif-editorial text-2xl sm:text-3xl font-bold text-[#2C2220]">🔗 Tu Link Público para Clientas</h2>
+            <p class="text-xs text-[#7D6B67]">Compártelo en tu biografía de Instagram o WhatsApp. Las citas que agenden caerán solas en tu calendario.</p>
+          </div>
+          <a id="btn-preview-public-link" href="?reservar=1" target="_blank" class="px-3.5 py-2 rounded-xl bg-white border border-[#E8DCD8] text-xs font-bold text-[#4A3B38] hover:bg-[#FBF4F3] shadow-sm">
+            👁️ Ver cómo lo ven mis clientas
+          </a>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="text" id="public-booking-url-input" readonly class="flex-1 px-4 py-3 rounded-2xl border border-[#E8DCD8] bg-[#FDFBF9] text-xs font-mono text-[#2C2220] select-all" />
+          <div class="flex gap-2">
+            <button type="button" onclick="copyPublicBookingLink()" class="flex-1 sm:flex-none px-4 py-3 rounded-2xl text-white text-xs font-bold brand-bg brand-bg-hover shadow-sm">
+              📋 Copiar Link
+            </button>
+            <button type="button" onclick="sharePublicLinkWhatsApp()" class="flex-1 sm:flex-none px-4 py-3 rounded-2xl bg-[#1F8A5B] hover:bg-[#186F48] text-white text-xs font-bold shadow-sm">
+              📲 Enviar por WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Catálogo de Servicios que la Manicurista Ofrece -->
+      <div class="card-luxury rounded-[28px] p-5 sm:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">💅 Mi Catálogo de Servicios (Para que la clienta elija)</h3>
+            <p class="text-xs text-[#7D6B67]">Agrega o edita los servicios que tus clientas verán disponibles cuando entren a tu link</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="flex items-center gap-2 text-xs font-bold text-[#4A3B38] bg-[#FDFBF9] px-3 py-2 rounded-xl border border-[#E8DCD8] cursor-pointer">
+              <input type="checkbox" id="toggle-show-prices" onchange="toggleShowCatalogPrices()" class="rounded" />
+              <span>Mostrar precios en el link</span>
+            </label>
+            <button type="button" onclick="openCatalogModal()" class="px-4 py-2.5 rounded-xl text-white text-xs font-bold brand-bg brand-bg-hover shadow-sm">
+              + Agregar Servicio
+            </button>
+          </div>
+        </div>
+
+        <div id="catalog-services-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+      </div>
+
+      <!-- Configuración de Horarios de Atención y Días Libres -->
+      <div class="card-luxury rounded-[28px] p-5 sm:p-6 space-y-4">
+        <div>
+          <h3 class="font-serif-editorial text-2xl font-bold text-[#2C2220]">⏰ Mis Días y Horarios Disponibles</h3>
+          <p class="text-xs text-[#7D6B67]">El link solo mostrará horas libres dentro de este horario y ocultará automáticamente las horas ya ocupadas en tu Agenda</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-2">Días de la Semana que Atiendes</label>
+          <div id="workdays-selector" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Primera Cita del Día</label>
+            <input type="time" id="sched-start-hour" onchange="saveScheduleSettings()" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Último Turno del Día</label>
+            <input type="time" id="sched-end-hour" onchange="saveScheduleSettings()" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Espacio entre Turnos</label>
+            <select id="sched-slot-minutes" onchange="saveScheduleSettings()" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-bold">
+              <option value="60">Cada 1 hora (60 min)</option>
+              <option value="90">Cada 1.5 horas (90 min)</option>
+              <option value="120">Cada 2 horas (120 min)</option>
+              <option value="30">Cada 30 minutos</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bloquear Fechas Libres / Feriados -->
+        <div class="pt-3 border-t border-[#F0E6E3] space-y-2.5">
+          <label class="block text-xs font-bold uppercase text-[#6E5D59]">🚫 Bloquear Día Libre o Vacaciones (Nadie podrá agendar ese día)</label>
+          <div class="flex flex-wrap gap-2">
+            <input type="date" id="block-date-input" class="px-3.5 py-2 rounded-xl border border-[#E8DCD8] text-xs font-bold" />
+            <button type="button" onclick="addBlockedDate()" class="px-4 py-2 rounded-xl bg-[#2C2220] text-white text-xs font-bold">
+              Bloquear Fecha
+            </button>
+          </div>
+          <div id="blocked-dates-list" class="flex flex-wrap gap-2 pt-1"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- PESTAÑA 6: AJUSTES, CUENTA, LOGO Y RESPALDO -->
     <section id="tab-settings" class="space-y-4 hidden">
       <div class="card-luxury rounded-[28px] p-6 space-y-5">
@@ -573,27 +863,32 @@
 
   <!-- NAVEGACIÓN INFERIOR -->
   <nav class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-[#F0E6E3] shadow-lg">
-    <div class="max-w-5xl mx-auto grid grid-cols-6 text-center">
-      <button onclick="openTab('dashboard')" id="nav-dashboard" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-bold brand-text">
-        <span class="text-lg">🏠</span><span>Inicio</span>
+    <div class="max-w-5xl mx-auto grid grid-cols-7 text-center">
+      <button onclick="openTab('dashboard')" id="nav-dashboard" class="py-2.5 flex flex-col items-center justify-center text-[10px] sm:text-[11px] font-bold brand-text">
+        <span class="text-base sm:text-lg">🏠</span><span>Inicio</span>
       </button>
-      <button onclick="openTab('agenda')" id="nav-agenda" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
-        <span class="text-lg">📅</span><span>Agenda</span>
+      <button onclick="openTab('agenda')" id="nav-agenda" class="relative py-2.5 flex flex-col items-center justify-center text-[10px] sm:text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-base sm:text-lg">📅</span><span>Agenda</span>
+        <span id="nav-agenda-badge" class="hidden absolute top-1.5 right-2 w-4 h-4 rounded-full bg-[#1F8A5B] text-white text-[9px] font-extrabold flex items-center justify-center">!</span>
       </button>
-      <button onclick="openTab('clients')" id="nav-clients" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
-        <span class="text-lg">👩‍🦰</span><span>Clientas</span>
+      <button onclick="openTab('booking')" id="nav-booking" class="py-2.5 flex flex-col items-center justify-center text-[10px] sm:text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-base sm:text-lg">🔗</span><span>Link Citas</span>
       </button>
-      <button onclick="openTab('services')" id="nav-services" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
-        <span class="text-lg">💅</span><span>Servicios</span>
+      <button onclick="openTab('clients')" id="nav-clients" class="py-2.5 flex flex-col items-center justify-center text-[10px] sm:text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-base sm:text-lg">👩‍🦰</span><span>Clientas</span>
       </button>
-      <button onclick="openTab('inventory')" id="nav-inventory" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
-        <span class="text-lg">📦</span><span>Inventario</span>
+      <button onclick="openTab('services')" id="nav-services" class="py-2.5 flex flex-col items-center justify-center text-[10px] sm:text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-base sm:text-lg">💅</span><span>Trabajos</span>
       </button>
-      <button onclick="openTab('settings')" id="nav-settings" class="py-2.5 flex flex-col items-center justify-center text-[11px] font-semibold text-[#8C7773]">
-        <span class="text-lg">⚙️</span><span>Ajustes</span>
+      <button onclick="openTab('inventory')" id="nav-inventory" class="py-2.5 flex flex-col items-center justify-center text-[10px] sm:text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-base sm:text-lg">📦</span><span>Stock</span>
+      </button>
+      <button onclick="openTab('settings')" id="nav-settings" class="py-2.5 flex flex-col items-center justify-center text-[10px] sm:text-[11px] font-semibold text-[#8C7773]">
+        <span class="text-base sm:text-lg">⚙️</span><span>Ajustes</span>
       </button>
     </div>
   </nav>
+  </div> <!-- Fin #admin-app-shell -->
 
   <!-- MODAL 1: SELECTOR DE COLOR EN MODO ESPECTRO -->
   <div id="modal-color" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
@@ -791,7 +1086,8 @@
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Servicio a Realizar *</label>
-          <input type="text" id="app-service" required placeholder="Ej: Retoque Polygel + Diseño" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          <input type="text" id="app-service" list="catalog-datalist" required placeholder="Elige o escribe el servicio..." class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+          <datalist id="catalog-datalist"></datalist>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="closeModal('modal-appointment')" class="px-4 py-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#6E5D59]">Cancelar</button>
@@ -976,9 +1272,94 @@
     </div>
   </div>
 
+  <!-- MODAL 8: AGREGAR / EDITAR SERVICIO DEL CATÁLOGO ONLINE -->
+  <div id="modal-catalog" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 id="modal-catalog-title" class="font-serif-editorial text-2xl font-bold text-[#2C2220]">💅 Servicio del Catálogo</h3>
+        <button onclick="closeModal('modal-catalog')" class="text-gray-400 hover:text-gray-700 font-bold text-lg">✕</button>
+      </div>
+      <form onsubmit="saveCatalogServiceForm(event)" class="space-y-3.5">
+        <input type="hidden" id="cat-id" />
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Nombre del Servicio *</label>
+          <input type="text" id="cat-name" required placeholder="Ej: Sistema Soft Gel + Manicura Rusa" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Precio ($ USD)</label>
+            <input type="number" step="0.01" id="cat-price" placeholder="25.00" value="20" min="0" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-bold" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Duración Estimada *</label>
+            <select id="cat-duration" class="w-full px-3 py-2.5 rounded-xl border border-[#E8DCD8] text-sm font-semibold">
+              <option value="60">1 hora (60 min)</option>
+              <option value="90">1.5 horas (90 min)</option>
+              <option value="120" selected>2 horas (120 min)</option>
+              <option value="150">2.5 horas (150 min)</option>
+              <option value="180">3 horas (180 min)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-[#6E5D59] mb-1">Descripción para la Clienta (Opcional)</label>
+          <input type="text" id="cat-desc" placeholder="Ej: Incluye limpieza profunda, nivelación y 2 tonos" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DCD8] text-sm" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-catalog')" class="px-4 py-2.5 rounded-xl border border-[#E8DCD8] text-xs font-bold text-[#6E5D59]">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-xs font-bold brand-bg">Guardar en Catálogo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
-    const STORAGE_KEY = 'nails_studio_editorial_v1';
+    // =========================================================================
+    // CONFIGURACIÓN FIREBASE EN TIEMPO REAL (nails-studio-app-282c4)
+    // =========================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDdzpdrH3eNKfJLrjOqPj6tq5fIFQnj2mg",
+      authDomain: "nails-studio-app-282c4.firebaseapp.com",
+      projectId: "nails-studio-app-282c4",
+      storageBucket: "nails-studio-app-282c4.firebasestorage.app",
+      messagingSenderId: "408927210646",
+      appId: "1:408927210646:web:dcf9aa8628e986183486b7"
+    };
+
+    let db = null;
+    try {
+      if (typeof firebase !== 'undefined') {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.firestore();
+      }
+    } catch (err) {
+      console.warn('Modo local activo:', err);
+    }
+
+    const IS_PUBLIC_BOOKING = new URLSearchParams(window.location.search).get('reservar') === '1';
+    const STORAGE_KEY = 'nails_studio_editorial_v2';
     let inventorySubView = 'all';
+    let isApplyingCloudSnapshot = false;
+    let knownOnlineIds = new Set();
+    let initialAppointmentsLoaded = false;
+
+    const DEFAULT_CATALOG = [
+      { id: 'cat_1', name: 'Sistema Soft Gel + Manicura Rusa', price: 25, duration: 120, desc: 'Extensión ligera de acabado natural + esmaltado en gel' },
+      { id: 'cat_2', name: 'Nivelación Base Rubber / Semipermanente', price: 18, duration: 90, desc: 'Refuerzo sobre uña natural, limpieza profunda y color' },
+      { id: 'cat_3', name: 'Retoque Acrílico o Polygel', price: 22, duration: 120, desc: 'Mantenimiento de estructura + diseño o tono liso' },
+      { id: 'cat_4', name: 'Pedicura Spa + Manicura Clásica', price: 30, duration: 120, desc: 'Exfoliación, hidratación y esmaltado duradero' }
+    ];
+
+    const DEFAULT_BOOKING_SETTINGS = {
+      showPrices: true,
+      workDays: [1, 2, 3, 4, 5, 6], // Lunes(1) a Sábado(6), Domingo(0) libre por defecto
+      startHour: '09:00',
+      endHour: '18:00',
+      slotMinutes: 60,
+      blockedDates: []
+    };
 
     let state = {
       user: {
@@ -988,7 +1369,7 @@
         address: 'Estudio Nails Studio',
         policy: 'Tolerancia de 15 min. Avisar cambios con 24h de anticipación.',
         template: '¡Hola {nombre}! ✨ Te escribo de *{estudio}* para recordarte que el *{fecha_ultimo}* te realizaste *{servicio}* y ya estás en fecha de tu retoque de {dias} días 💅. ¿Qué día y hora te gustaría agendar tu cita?',
-        customLogo: '', // vacio = usa el ícono editorial minimalista de uña almendrada de la captura
+        customLogo: '',
         brandColor: '#B86B62'
       },
       isDemo: true,
@@ -996,7 +1377,10 @@
       services: [],
       appointments: [],
       inventory: [],
-      expenses: []
+      expenses: [],
+      catalog: JSON.parse(JSON.stringify(DEFAULT_CATALOG)),
+      bookingSettings: JSON.parse(JSON.stringify(DEFAULT_BOOKING_SETTINGS)),
+      updatedAt: 0
     };
 
     function getTodayISO() {
@@ -1070,28 +1454,215 @@
         { id: 'e1', type: 'Compra de Insumos', desc: 'Reposición Bases Rubber y Monómero', amount: 25.00, date: today, payment: 'Efectivo USD', qtyAdded: 3 },
         { id: 'e2', type: 'Inversión en Equipo', desc: 'Fresas de Carburo y Puntas Diamante Rusa', amount: 14.00, date: today, payment: 'Pago Móvil', qtyAdded: 1 }
       ];
+
+      if (!state.catalog || !state.catalog.length) {
+        state.catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+      }
+      if (!state.bookingSettings) {
+        state.bookingSettings = JSON.parse(JSON.stringify(DEFAULT_BOOKING_SETTINGS));
+      }
+    }
+
+    function ensureBookingDefaults() {
+      if (!Array.isArray(state.inventory)) state.inventory = [];
+      if (!Array.isArray(state.expenses)) state.expenses = [];
+      if (!Array.isArray(state.clients)) state.clients = [];
+      if (!Array.isArray(state.services)) state.services = [];
+      if (!Array.isArray(state.appointments)) state.appointments = [];
+      if (!Array.isArray(state.catalog) || state.catalog.length === 0) {
+        state.catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+      }
+      if (!state.bookingSettings) {
+        state.bookingSettings = JSON.parse(JSON.stringify(DEFAULT_BOOKING_SETTINGS));
+      } else {
+        state.bookingSettings = Object.assign({}, DEFAULT_BOOKING_SETTINGS, state.bookingSettings);
+        if (!Array.isArray(state.bookingSettings.workDays)) state.bookingSettings.workDays = [1,2,3,4,5,6];
+        if (!Array.isArray(state.bookingSettings.blockedDates)) state.bookingSettings.blockedDates = [];
+      }
+      if (!state.user) state.user = {};
+      if (!state.user.brandColor) state.user.brandColor = '#B86B62';
     }
 
     function loadState() {
-      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('nails_studio_manager_v5') || localStorage.getItem('nails_studio_manager_v4');
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('nails_studio_editorial_v1') || localStorage.getItem('nails_studio_manager_v5') || localStorage.getItem('nails_studio_manager_v4');
       if (raw) {
         try {
           const parsed = JSON.parse(raw);
           state = Object.assign({}, state, parsed);
-          if (!state.inventory) state.inventory = [];
-          if (!state.expenses) state.expenses = [];
-          if (!state.user.brandColor) state.user.brandColor = '#B86B62';
+          ensureBookingDefaults();
         } catch (e) {
           seedDemoData();
         }
       } else {
         seedDemoData();
-        saveState();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       }
     }
 
-    function saveState() {
+    function setCloudBadgeStatus(text, isOk = true) {
+      const el = document.getElementById('cloud-sync-indicator');
+      if (!el) return;
+      el.textContent = text;
+      el.className = isOk
+        ? 'inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#F2FBF6] text-[#155E3D] text-[9px] font-extrabold'
+        : 'inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-extrabold';
+    }
+
+    function saveState(skipCloud = false) {
+      state.updatedAt = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (!skipCloud && !isApplyingCloudSnapshot && db && !IS_PUBLIC_BOOKING) {
+        syncMainStateToCloud();
+      }
+    }
+
+    let cloudSyncTimer = null;
+    function syncMainStateToCloud() {
+      if (!db) return;
+      clearTimeout(cloudSyncTimer);
+      setCloudBadgeStatus('☁️ Guardando...', true);
+      cloudSyncTimer = setTimeout(() => {
+        const payload = {
+          user: state.user,
+          isDemo: Boolean(state.isDemo),
+          clients: state.clients || [],
+          services: state.services || [],
+          inventory: state.inventory || [],
+          expenses: state.expenses || [],
+          catalog: state.catalog || DEFAULT_CATALOG,
+          bookingSettings: state.bookingSettings || DEFAULT_BOOKING_SETTINGS,
+          updatedAt: state.updatedAt || Date.now()
+        };
+        db.collection('studio_data').doc('main').set(payload, { merge: true })
+          .then(() => setCloudBadgeStatus('☁️ En vivo', true))
+          .catch(() => setCloudBadgeStatus('☁️ Local', false));
+      }, 250);
+    }
+
+    function saveAppointmentToCloud(appObj) {
+      if (!db || !appObj || !appObj.id) return Promise.resolve();
+      return db.collection('studio_appointments').doc(appObj.id).set(appObj);
+    }
+
+    function deleteAppointmentFromCloud(appId) {
+      if (!db || !appId) return Promise.resolve();
+      return db.collection('studio_appointments').doc(appId).delete().catch(() => {});
+    }
+
+    // Conectar la App de la Manicurista en tiempo real con Firebase
+    function startAdminRealtimeSync() {
+      if (!db) {
+        setCloudBadgeStatus('☁️ Modo Local', false);
+        return;
+      }
+
+      // 1. Escuchar datos principales del estudio (o subirlos si aún no existen en la nube)
+      db.collection('studio_data').doc('main').onSnapshot(docSnap => {
+        if (!docSnap.exists) {
+          syncMainStateToCloud();
+          // Subir citas locales iniciales si existen
+          (state.appointments || []).forEach(a => saveAppointmentToCloud(a));
+          return;
+        }
+        const cloud = docSnap.data();
+        if (cloud && cloud.updatedAt && cloud.updatedAt > (state.updatedAt || 0)) {
+          isApplyingCloudSnapshot = true;
+          const currentApps = state.appointments;
+          state = Object.assign({}, state, cloud);
+          state.appointments = currentApps;
+          ensureBookingDefaults();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          if (state.user && state.user.email) {
+            document.getElementById('login-screen').classList.add('hidden');
+          }
+          renderAll();
+          isApplyingCloudSnapshot = false;
+        }
+        setCloudBadgeStatus('☁️ En vivo', true);
+      }, () => {
+        setCloudBadgeStatus('☁️ Sin red', false);
+      });
+
+      // 2. Escuchar colección de Citas (incluyendo las agendadas por clientas desde el Link Público)
+      db.collection('studio_appointments').onSnapshot(querySnap => {
+        const cloudApps = [];
+        let clientsModified = false;
+
+        querySnap.forEach(doc => {
+          const a = doc.data();
+          if (a && a.id) {
+            cloudApps.push(a);
+
+            // Si es una reserva online, asegurar que la clienta quede registrada en el Directorio
+            if (a.source === 'online' && a.clientName && a.clientPhone) {
+              const cleanDigits = String(a.clientPhone).replace(/[^0-9]/g, '');
+              let existing = state.clients.find(c =>
+                c.id === a.clientId ||
+                (cleanDigits && String(c.phone).replace(/[^0-9]/g, '') === cleanDigits)
+              );
+              if (!existing) {
+                const newClient = {
+                  id: a.clientId || ('c_online_' + cleanDigits),
+                  name: a.clientName,
+                  code: a.clientCode || '+58',
+                  phone: a.clientPhone,
+                  freq: 20,
+                  lastDate: a.date || getTodayISO(),
+                  lastService: a.service || 'Reserva Online',
+                  allergies: '',
+                  notes: a.clientNotes ? `Reserva Online: ${a.clientNotes}` : 'Registrada desde el Link de Citas'
+                };
+                state.clients.unshift(newClient);
+                clientsModified = true;
+              }
+            }
+
+            // Disparar notificación en teléfono si acaba de entrar una reserva online nueva
+            if (initialAppointmentsLoaded && a.source === 'online' && a.unreadOnline && !knownOnlineIds.has(a.id)) {
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('🎉 ¡Nueva Cita Online Agendada!', {
+                  body: `${a.clientName} agendó ${a.service} para el ${formatHumanDate(a.date)} a las ${formatTime12h(a.time)}`,
+                  icon: 'icon-192.png'
+                });
+              }
+            }
+            if (a.source === 'online') {
+              knownOnlineIds.add(a.id);
+            }
+          }
+        });
+
+        // Si en la primera conexión la nube estaba vacía pero había citas locales demo, subirlas
+        if (!initialAppointmentsLoaded && cloudApps.length === 0 && state.appointments.length > 0) {
+          state.appointments.forEach(a => saveAppointmentToCloud(a));
+          initialAppointmentsLoaded = true;
+          return;
+        }
+
+        initialAppointmentsLoaded = true;
+        state.appointments = cloudApps;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        if (clientsModified) {
+          syncMainStateToCloud();
+        }
+        renderAll();
+      });
+    }
+
+    function getAppointmentClient(a) {
+      const found = state.clients.find(c => c.id === a.clientId);
+      if (found) return found;
+      if (a.clientPhone) {
+        const cleanDigits = String(a.clientPhone).replace(/[^0-9]/g, '');
+        const byPhone = state.clients.find(c => cleanDigits && String(c.phone).replace(/[^0-9]/g, '') === cleanDigits);
+        if (byPhone) return byPhone;
+      }
+      return {
+        id: a.clientId || '',
+        name: a.clientName || 'Clienta',
+        code: a.clientCode || '+58',
+        phone: a.clientPhone || ''
+      };
     }
 
     function getClientCycleInfo(client) {
@@ -1325,7 +1896,7 @@
     }
 
     function openTab(tabName) {
-      ['dashboard', 'agenda', 'clients', 'services', 'inventory', 'settings'].forEach(t => {
+      ['dashboard', 'agenda', 'booking', 'clients', 'services', 'inventory', 'settings'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
         const nav = document.getElementById(`nav-${t}`);
         if (t === tabName) {
@@ -1419,6 +1990,10 @@
       const options = state.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
       document.getElementById('service-client-id').innerHTML = options || '<option value="">Primero registra una clienta</option>';
       document.getElementById('app-client-id').innerHTML = options || '<option value="">Primero registra una clienta</option>';
+      const dl = document.getElementById('catalog-datalist');
+      if (dl && Array.isArray(state.catalog)) {
+        dl.innerHTML = state.catalog.map(s => `<option value="${s.name}">${s.duration} min - $${Number(s.price || 0).toFixed(2)}</option>`).join('');
+      }
     }
 
     function openServiceModal(defaultClientId = null) {
@@ -1552,6 +2127,7 @@
     function deleteAppointment(appId) {
       if (!confirm('¿Cancelar y eliminar esta cita de la agenda?')) return;
       state.appointments = state.appointments.filter(a => a.id !== appId);
+      deleteAppointmentFromCloud(appId);
       saveState();
       renderAll();
     }
@@ -1568,15 +2144,30 @@
       e.preventDefault();
       const clientId = document.getElementById('app-client-id').value;
       if (!clientId) return;
+      const clientObj = state.clients.find(c => c.id === clientId);
       const appDate = document.getElementById('app-date').value;
       const appTime = document.getElementById('app-time').value;
-      state.appointments.push({
+      const srvName = document.getElementById('app-service').value.trim();
+      const matchedCat = (state.catalog || []).find(s => s.name.toLowerCase() === srvName.toLowerCase());
+
+      const newApp = {
         id: 'a_' + Date.now(),
         clientId,
+        clientName: clientObj ? clientObj.name : 'Clienta',
+        clientCode: clientObj ? (clientObj.code || '+58') : '+58',
+        clientPhone: clientObj ? (clientObj.phone || '') : '',
         date: appDate,
         time: appTime,
-        service: document.getElementById('app-service').value.trim()
-      });
+        duration: matchedCat ? Number(matchedCat.duration) : 60,
+        price: matchedCat ? Number(matchedCat.price) : 20,
+        service: srvName,
+        source: 'admin',
+        unreadOnline: false,
+        createdAt: Date.now()
+      };
+      state.appointments.push(newApp);
+      saveAppointmentToCloud(newApp);
+
       if (appDate) {
         selectedCalendarDate = appDate;
         const parts = appDate.split('-').map(Number);
@@ -1591,11 +2182,32 @@
     function completeAppointment(appId) {
       const app = state.appointments.find(a => a.id === appId);
       if (!app) return;
-      const priceStr = prompt(`¿Cuánto cobraste por "${app.service}" ($ USD)?`, '20');
+      const defaultPrice = app.price ? String(app.price) : '20';
+      const priceStr = prompt(`¿Cuánto cobraste por "${app.service}" ($ USD)?`, defaultPrice);
       if (priceStr === null) return;
+
+      const resolvedClient = getAppointmentClient(app);
+      let targetClientId = resolvedClient.id;
+      let clientInDir = state.clients.find(c => c.id === targetClientId);
+      if (!clientInDir && resolvedClient.name) {
+        clientInDir = {
+          id: targetClientId || ('c_' + Date.now()),
+          name: resolvedClient.name,
+          code: resolvedClient.code || '+58',
+          phone: resolvedClient.phone || '',
+          freq: 20,
+          lastDate: app.date,
+          lastService: app.service,
+          allergies: '',
+          notes: 'Agendada desde el Link Online'
+        };
+        targetClientId = clientInDir.id;
+        state.clients.unshift(clientInDir);
+      }
+
       state.services.unshift({
         id: 's_' + Date.now(),
-        clientId: app.clientId,
+        clientId: targetClientId,
         type: app.service,
         date: app.date,
         price: Number(priceStr) || 0,
@@ -1603,12 +2215,12 @@
         formula: '',
         photo: ''
       });
-      const client = state.clients.find(c => c.id === app.clientId);
-      if (client) {
-        client.lastDate = app.date;
-        client.lastService = app.service;
+      if (clientInDir) {
+        clientInDir.lastDate = app.date;
+        clientInDir.lastService = app.service;
       }
       state.appointments = state.appointments.filter(a => a.id !== appId);
+      deleteAppointmentFromCloud(appId);
       saveState();
       renderAll();
     }
@@ -1855,13 +2467,15 @@
     }
 
     function clearDemoData() {
-      if (!confirm('¿Limpiar los datos de ejemplo para empezar a registrar las clientas reales desde cero?')) return;
+      if (!confirm('¿Limpiar los datos de ejemplo para empezar a registrar las clientas reales desde cero? (Tu catálogo de servicios se mantendrá editable)')) return;
+      const oldAppIds = state.appointments.map(a => a.id);
       state.isDemo = false;
       state.clients = [];
       state.services = [];
       state.appointments = [];
       state.inventory = [];
       state.expenses = [];
+      oldAppIds.forEach(id => deleteAppointmentFromCloud(id));
       saveState();
       renderAll();
     }
@@ -1994,12 +2608,13 @@
       document.getElementById('dashboard-upcoming-appointments').innerHTML = upcoming.length === 0
         ? '<p class="text-[#8C7773]">No hay citas reservadas próximamente.</p>'
         : upcoming.map(a => {
-            const client = state.clients.find(c => c.id === a.clientId);
+            const client = getAppointmentClient(a);
+            const onlineBadge = a.source === 'online' ? '<span class="px-1.5 py-0.5 rounded bg-[#E3F7EC] text-[#155E3D] text-[9px] font-extrabold ml-1">🌐 Online</span>' : '';
             return `
-              <div class="p-3 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex items-center justify-between">
+              <div class="p-3 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex items-center justify-between gap-2">
                 <div>
-                  <p class="font-bold text-[#2C2220]">${client ? client.name : 'Clienta'} • ${a.service}</p>
-                  <p class="text-[#7D6B67]">${formatHumanDate(a.date)} a las ${a.time}</p>
+                  <p class="font-bold text-[#2C2220]">${client.name} ${onlineBadge} • ${a.service}</p>
+                  <p class="text-[#7D6B67]">${formatHumanDate(a.date)} a las ${formatTime12h(a.time)}</p>
                 </div>
                 <button onclick="completeAppointment('${a.id}')" class="px-3 py-1.5 rounded-xl bg-[#E3F7EC] text-[#155E3D] font-bold">Completar</button>
               </div>
@@ -2153,18 +2768,20 @@
         return;
       }
       list.innerHTML = monthApps.map(a => {
-        const client = state.clients.find(c => c.id === a.clientId);
-        const clientName = client ? client.name : 'Clienta';
-        const phone = client ? ((client.code || '+58') + client.phone).replace(/[^0-9]/g, '') : '';
+        const client = getAppointmentClient(a);
+        const clientName = client.name;
+        const phone = ((client.code || '+58') + (client.phone || '')).replace(/[^0-9]/g, '');
+        const onlineTag = a.source === 'online' ? '<span class="px-2 py-0.5 rounded-full bg-[#E3F7EC] text-[#155E3D] text-[10px] font-extrabold">🌐 Agendada por Link</span>' : '';
         const confirmMsg = `¡Hola ${clientName}! ✨ Te confirmo tu cita en *${state.user.name || 'Nails Studio'}* para el día *${formatHumanDate(a.date)}* a las *${formatTime12h(a.time)}* (${a.service}).\n📍 Dirección: ${state.user.address}\n📌 Nota: ${state.user.policy}`;
         return `
           <div class="p-4 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex flex-wrap items-center justify-between gap-3">
             <div class="cursor-pointer" onclick="selectCalendarDay('${a.date}')">
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <span class="px-2.5 py-0.5 rounded-lg brand-soft-bg brand-text font-extrabold text-xs">⏰ ${formatTime12h(a.time)}</span>
                 <h4 class="font-extrabold text-[#2C2220] text-sm">${clientName} — ${a.service}</h4>
+                ${onlineTag}
               </div>
-              <p class="text-xs text-[#7D6B67] mt-1">📅 ${formatHumanDate(a.date)}</p>
+              <p class="text-xs text-[#7D6B67] mt-1">📅 ${formatHumanDate(a.date)} ${client.phone ? `• 📱 ${client.code || '+58'} ${client.phone}` : ''} ${a.clientNotes ? `• 📝 ${a.clientNotes}` : ''}</p>
             </div>
             <div class="flex flex-wrap gap-2">
               <a href="https://wa.me/${phone}?text=${encodeURIComponent(confirmMsg)}" target="_blank" class="px-3 py-2 rounded-xl bg-[#1F8A5B] text-white text-xs font-bold">
@@ -2183,9 +2800,10 @@
     }
 
     function renderHourlyAppointmentCard(a) {
-      const client = state.clients.find(c => c.id === a.clientId);
-      const clientName = client ? client.name : 'Clienta';
-      const phone = client ? ((client.code || '+58') + client.phone).replace(/[^0-9]/g, '') : '';
+      const client = getAppointmentClient(a);
+      const clientName = client.name;
+      const phone = ((client.code || '+58') + (client.phone || '')).replace(/[^0-9]/g, '');
+      const onlinePill = a.source === 'online' ? '<span class="inline-block px-2 py-0.5 rounded-md bg-[#E3F7EC] text-[#155E3D] text-[9px] font-extrabold mb-1 ml-1">🌐 Online</span>' : '';
       const confirmMsg = `¡Hola ${clientName}! ✨ Te confirmo tu cita en *${state.user.name || 'Nails Studio'}* para el día *${formatHumanDate(a.date)}* a las *${formatTime12h(a.time)}* (${a.service}).\n📍 Dirección: ${state.user.address}\n📌 Nota: ${state.user.policy}`;
       return `
         <div class="bg-white rounded-xl p-3 border border-[#E8DCD8] shadow-sm space-y-2">
@@ -2193,9 +2811,11 @@
             <div>
               <span class="inline-block px-2 py-0.5 rounded-md brand-bg text-white text-[10px] font-extrabold mb-1">
                 ${formatTime12h(a.time)}
-              </span>
+              </span>${onlinePill}
               <h5 class="font-extrabold text-[#2C2220] text-xs sm:text-sm leading-snug">${clientName}</h5>
               <p class="text-xs text-[#6E5D59]">💅 ${a.service}</p>
+              ${client.phone ? `<p class="text-[11px] text-[#8C7773]">📱 ${client.code || '+58'} ${client.phone}</p>` : ''}
+              ${a.clientNotes ? `<p class="text-[11px] text-[#7D6B67] italic">📝 "${a.clientNotes}"</p>` : ''}
             </div>
             <button onclick="deleteAppointment('${a.id}')" class="text-xs text-gray-400 hover:text-rose-600" title="Eliminar cita">✕</button>
           </div>
@@ -2425,16 +3045,670 @@
       }
     }
 
+    // =========================================================================
+    // MÓDULO DE LA MANICURISTA: CATÁLOGO DE SERVICIOS, HORARIOS Y LINK PÚBLICO
+    // =========================================================================
+    function getPublicBookingUrl() {
+      const cleanPath = window.location.pathname.replace(/index\.html$/, '');
+      const base = window.location.origin + (cleanPath.endsWith('/') ? cleanPath : cleanPath + '/');
+      return `${base}?reservar=1`;
+    }
+
+    function copyPublicBookingLink() {
+      const url = getPublicBookingUrl();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          alert('✨ ¡Link de citas copiado! Ya puedes pegarlo en tu perfil de Instagram o WhatsApp.');
+        });
+      } else {
+        const input = document.getElementById('public-booking-url-input');
+        input.select();
+        document.execCommand('copy');
+        alert('✨ ¡Link de citas copiado!');
+      }
+    }
+
+    function sharePublicLinkWhatsApp() {
+      const url = getPublicBookingUrl();
+      const studioName = state.user.name || 'Nails Studio';
+      const text = `✨ ¡Hola! Puedes ver mis horarios disponibles y agendar tu cita en *${studioName}* directamente desde este enlace:\n👉 ${url}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function openCatalogModal(catId = null) {
+      ensureBookingDefaults();
+      document.getElementById('cat-id').value = catId || '';
+      if (catId) {
+        const item = state.catalog.find(c => c.id === catId);
+        if (!item) return;
+        document.getElementById('modal-catalog-title').textContent = '✏️ Editar Servicio del Catálogo';
+        document.getElementById('cat-name').value = item.name;
+        document.getElementById('cat-price').value = item.price;
+        document.getElementById('cat-duration').value = String(item.duration || 60);
+        document.getElementById('cat-desc').value = item.desc || '';
+      } else {
+        document.getElementById('modal-catalog-title').textContent = '💅 Nuevo Servicio para el Catálogo';
+        document.getElementById('cat-name').value = '';
+        document.getElementById('cat-price').value = '20';
+        document.getElementById('cat-duration').value = '120';
+        document.getElementById('cat-desc').value = '';
+      }
+      openModal('modal-catalog');
+    }
+
+    function saveCatalogServiceForm(e) {
+      e.preventDefault();
+      ensureBookingDefaults();
+      const id = document.getElementById('cat-id').value;
+      const obj = {
+        id: id || ('cat_' + Date.now()),
+        name: document.getElementById('cat-name').value.trim(),
+        price: Number(document.getElementById('cat-price').value) || 0,
+        duration: Number(document.getElementById('cat-duration').value) || 60,
+        desc: document.getElementById('cat-desc').value.trim()
+      };
+      if (id) {
+        const idx = state.catalog.findIndex(x => x.id === id);
+        if (idx !== -1) state.catalog[idx] = obj;
+      } else {
+        state.catalog.push(obj);
+      }
+      saveState();
+      closeModal('modal-catalog');
+      renderAll();
+    }
+
+    function deleteCatalogService(catId) {
+      if (state.catalog.length <= 1) {
+        alert('Debes mantener al menos 1 servicio activo en tu catálogo para las clientas.');
+        return;
+      }
+      if (!confirm('¿Quitar este servicio del catálogo público?')) return;
+      state.catalog = state.catalog.filter(c => c.id !== catId);
+      saveState();
+      renderAll();
+    }
+
+    function toggleShowCatalogPrices() {
+      ensureBookingDefaults();
+      state.bookingSettings.showPrices = document.getElementById('toggle-show-prices').checked;
+      saveState();
+      renderBookingAdmin();
+    }
+
+    function toggleWorkDay(dayNum) {
+      ensureBookingDefaults();
+      const days = state.bookingSettings.workDays || [];
+      if (days.includes(dayNum)) {
+        state.bookingSettings.workDays = days.filter(d => d !== dayNum);
+      } else {
+        state.bookingSettings.workDays = [...days, dayNum].sort();
+      }
+      saveState();
+      renderBookingAdmin();
+    }
+
+    function saveScheduleSettings() {
+      ensureBookingDefaults();
+      state.bookingSettings.startHour = document.getElementById('sched-start-hour').value || '09:00';
+      state.bookingSettings.endHour = document.getElementById('sched-end-hour').value || '18:00';
+      state.bookingSettings.slotMinutes = Number(document.getElementById('sched-slot-minutes').value) || 60;
+      saveState();
+    }
+
+    function addBlockedDate() {
+      ensureBookingDefaults();
+      const val = document.getElementById('block-date-input').value;
+      if (!val) return;
+      if (!state.bookingSettings.blockedDates.includes(val)) {
+        state.bookingSettings.blockedDates.push(val);
+        state.bookingSettings.blockedDates.sort();
+        saveState();
+        renderBookingAdmin();
+      }
+      document.getElementById('block-date-input').value = '';
+    }
+
+    function removeBlockedDate(iso) {
+      ensureBookingDefaults();
+      state.bookingSettings.blockedDates = state.bookingSettings.blockedDates.filter(d => d !== iso);
+      saveState();
+      renderBookingAdmin();
+    }
+
+    function renderBookingAdmin() {
+      ensureBookingDefaults();
+      const urlInput = document.getElementById('public-booking-url-input');
+      const previewBtn = document.getElementById('btn-preview-public-link');
+      const pubUrl = getPublicBookingUrl();
+      if (urlInput) urlInput.value = pubUrl;
+      if (previewBtn) previewBtn.href = pubUrl;
+
+      const showPricesChk = document.getElementById('toggle-show-prices');
+      if (showPricesChk) showPricesChk.checked = Boolean(state.bookingSettings.showPrices);
+
+      const catContainer = document.getElementById('catalog-services-list');
+      if (catContainer) {
+        catContainer.innerHTML = state.catalog.map(s => `
+          <div class="p-4 rounded-2xl bg-[#FDFBF9] border border-[#E8DCD8] flex items-start justify-between gap-3">
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h4 class="font-extrabold text-[#2C2220] text-sm">${s.name}</h4>
+                <span class="px-2 py-0.5 rounded-full brand-soft-bg brand-text text-[10px] font-extrabold">⏱️ ${s.duration} min</span>
+                ${state.bookingSettings.showPrices ? `<span class="px-2 py-0.5 rounded-full bg-[#E3F7EC] text-[#155E3D] text-[10px] font-extrabold">$${Number(s.price || 0).toFixed(2)}</span>` : ''}
+              </div>
+              ${s.desc ? `<p class="text-xs text-[#7D6B67]">${s.desc}</p>` : ''}
+            </div>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="openCatalogModal('${s.id}')" class="p-1.5 rounded-lg text-xs text-[#6E5D59] hover:bg-white" title="Editar">✏️</button>
+              <button type="button" onclick="deleteCatalogService('${s.id}')" class="p-1.5 rounded-lg text-xs text-rose-600 hover:bg-rose-50" title="Eliminar">🗑️</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const dayLabels = [
+        { num: 1, label: 'Lun' },
+        { num: 2, label: 'Mar' },
+        { num: 3, label: 'Mié' },
+        { num: 4, label: 'Jue' },
+        { num: 5, label: 'Vie' },
+        { num: 6, label: 'Sáb' },
+        { num: 0, label: 'Dom' }
+      ];
+      const wdContainer = document.getElementById('workdays-selector');
+      if (wdContainer) {
+        wdContainer.innerHTML = dayLabels.map(d => {
+          const active = state.bookingSettings.workDays.includes(d.num);
+          return `
+            <button type="button" onclick="toggleWorkDay(${d.num})" class="px-4 py-2 rounded-xl text-xs font-extrabold border transition ${active ? 'brand-bg text-white border-transparent shadow-sm' : 'bg-[#FDFBF9] text-[#8C7773] border-[#E8DCD8]'}">
+              ${active ? '✓ ' : ''}${d.label}
+            </button>
+          `;
+        }).join('');
+      }
+
+      const sh = document.getElementById('sched-start-hour');
+      const eh = document.getElementById('sched-end-hour');
+      const sm = document.getElementById('sched-slot-minutes');
+      if (sh) sh.value = state.bookingSettings.startHour || '09:00';
+      if (eh) eh.value = state.bookingSettings.endHour || '18:00';
+      if (sm) sm.value = String(state.bookingSettings.slotMinutes || 60);
+
+      const bdContainer = document.getElementById('blocked-dates-list');
+      if (bdContainer) {
+        const bDates = state.bookingSettings.blockedDates || [];
+        bdContainer.innerHTML = bDates.length === 0
+          ? '<span class="text-xs text-[#8C7773]">No tienes fechas bloqueadas actualmente.</span>'
+          : bDates.map(iso => `
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold">
+                🚫 ${formatHumanDate(iso)}
+                <button type="button" onclick="removeBlockedDate('${iso}')" class="ml-1 font-extrabold hover:text-rose-950">✕</button>
+              </span>
+            `).join('');
+      }
+    }
+
+    function renderOnlineBookingAlerts() {
+      const unread = (state.appointments || []).filter(a => a.source === 'online' && a.unreadOnline);
+      const alertBox = document.getElementById('online-booking-alert');
+      const alertList = document.getElementById('online-booking-alert-list');
+      const navBadge = document.getElementById('nav-agenda-badge');
+
+      if (navBadge) {
+        if (unread.length > 0) {
+          navBadge.textContent = unread.length;
+          navBadge.classList.remove('hidden');
+        } else {
+          navBadge.classList.add('hidden');
+        }
+      }
+
+      if (!alertBox || !alertList) return;
+      if (unread.length === 0) {
+        alertBox.classList.add('hidden');
+        return;
+      }
+
+      alertBox.classList.remove('hidden');
+      alertList.innerHTML = unread.map(a => {
+        const cleanPhone = ((a.clientCode || '+58') + (a.clientPhone || '')).replace(/[^0-9]/g, '');
+        const msg = `¡Hola ${a.clientName}! ✨ Recibí tu reserva online en *${state.user.name || 'Nails Studio'}* para *${a.service}* el día *${formatHumanDate(a.date)}* a las *${formatTime12h(a.time)}*. ¡Te esperamos! 💅`;
+        return `
+          <div class="p-3 rounded-2xl bg-white border border-[#C6E9D6] flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div>
+              <span class="font-extrabold text-[#2C2220]">${a.clientName}</span> reservó <strong>${a.service}</strong>
+              <p class="text-[#5C4B47]">📅 ${formatHumanDate(a.date)} a las <strong>${formatTime12h(a.time)}</strong> • 📱 ${a.clientCode || '+58'} ${a.clientPhone || ''}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}" target="_blank" class="px-3 py-1.5 rounded-xl bg-[#1F8A5B] text-white font-bold">
+                💬 Saludar Clienta
+              </a>
+              <button onclick="openTab('agenda'); selectCalendarDay('${a.date}');" class="px-3 py-1.5 rounded-xl brand-soft-bg brand-text font-bold">
+                📅 Ver en Agenda
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function markAllOnlineBookingsRead() {
+      (state.appointments || []).forEach(a => {
+        if (a.unreadOnline) {
+          a.unreadOnline = false;
+          saveAppointmentToCloud(a);
+        }
+      });
+      saveState(true);
+      renderOnlineBookingAlerts();
+    }
+
+    // =========================================================================
+    // PORTAL PÚBLICO DE CLIENTAS (?reservar=1): LÓGICA EN TIEMPO REAL
+    // =========================================================================
+    let pubStudioConfig = {
+      user: state.user,
+      catalog: JSON.parse(JSON.stringify(DEFAULT_CATALOG)),
+      bookingSettings: JSON.parse(JSON.stringify(DEFAULT_BOOKING_SETTINGS))
+    };
+    let pubBookedAppointments = [];
+    let pubSelectedServiceId = '';
+    let pubCalYear = new Date().getFullYear();
+    let pubCalMonth = new Date().getMonth();
+    let pubSelectedDate = '';
+    let pubSelectedTime = '';
+
+    function timeStrToMinutes(tStr) {
+      if (!tStr) return 0;
+      const [h, m] = tStr.split(':').map(Number);
+      return (h * 60) + (m || 0);
+    }
+
+    function minutesToTimeStr(totalMin) {
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function isPublicDateSelectable(isoDate) {
+      const today = getTodayISO();
+      if (isoDate < today) return false;
+      const bs = pubStudioConfig.bookingSettings || DEFAULT_BOOKING_SETTINGS;
+      if ((bs.blockedDates || []).includes(isoDate)) return false;
+      const [y, m, d] = isoDate.split('-').map(Number);
+      const weekday = new Date(y, m - 1, d).getDay();
+      if (!(bs.workDays || [1,2,3,4,5,6]).includes(weekday)) return false;
+      return true;
+    }
+
+    function getAvailableSlotsForDate(isoDate) {
+      if (!isPublicDateSelectable(isoDate)) return [];
+      const bs = pubStudioConfig.bookingSettings || DEFAULT_BOOKING_SETTINGS;
+      const startMin = timeStrToMinutes(bs.startHour || '09:00');
+      const endMin = timeStrToMinutes(bs.endHour || '18:00');
+      const step = Number(bs.slotMinutes) || 60;
+
+      const selectedSrv = (pubStudioConfig.catalog || []).find(s => s.id === pubSelectedServiceId) || (pubStudioConfig.catalog || [])[0];
+      const srvDuration = selectedSrv ? (Number(selectedSrv.duration) || 60) : 60;
+
+      const dayBookings = pubBookedAppointments.filter(a => a.date === isoDate);
+      const now = new Date();
+      const todayISO = getTodayISO();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      const freeSlots = [];
+      for (let t = startMin; t <= endMin; t += step) {
+        if (isoDate === todayISO && t <= nowMinutes + 15) continue;
+
+        const candidateStart = t;
+        const candidateEnd = t + srvDuration;
+
+        // Revisar si choca con alguna cita ya agendada en ese día
+        const hasConflict = dayBookings.some(b => {
+          const bStart = timeStrToMinutes(b.time || '09:00');
+          const bDur = Number(b.duration) || step;
+          const bEnd = bStart + bDur;
+          return candidateStart < bEnd && candidateEnd > bStart;
+        });
+
+        if (!hasConflict) {
+          freeSlots.push(minutesToTimeStr(t));
+        }
+      }
+      return freeSlots;
+    }
+
+    function findFirstAvailablePublicDate() {
+      const today = getTodayISO();
+      for (let i = 0; i < 45; i++) {
+        const candidate = addDaysISO(today, i);
+        if (getAvailableSlotsForDate(candidate).length > 0) {
+          return candidate;
+        }
+      }
+      return today;
+    }
+
+    function initPublicBookingPortal() {
+      document.body.classList.add('public-booking-mode');
+      document.getElementById('public-booking-view').classList.remove('hidden');
+
+      // Cargar datos locales por defecto mientras llega Firebase
+      loadState();
+      pubStudioConfig.user = state.user;
+      pubStudioConfig.catalog = state.catalog;
+      pubStudioConfig.bookingSettings = state.bookingSettings;
+      pubBookedAppointments = state.appointments || [];
+      pubSelectedServiceId = (pubStudioConfig.catalog[0] && pubStudioConfig.catalog[0].id) || '';
+      pubSelectedDate = findFirstAvailablePublicDate();
+
+      if (db) {
+        db.collection('studio_data').doc('main').onSnapshot(docSnap => {
+          if (docSnap.exists) {
+            const data = docSnap.data();
+            if (data.user) pubStudioConfig.user = data.user;
+            if (Array.isArray(data.catalog) && data.catalog.length > 0) pubStudioConfig.catalog = data.catalog;
+            if (data.bookingSettings) pubStudioConfig.bookingSettings = Object.assign({}, DEFAULT_BOOKING_SETTINGS, data.bookingSettings);
+            if (!pubSelectedServiceId || !pubStudioConfig.catalog.some(s => s.id === pubSelectedServiceId)) {
+              pubSelectedServiceId = pubStudioConfig.catalog[0].id;
+            }
+            if (pubStudioConfig.user.brandColor) {
+              applyPublicBrandColor(pubStudioConfig.user.brandColor);
+            }
+            renderPublicPortal();
+          }
+        });
+
+        db.collection('studio_appointments').onSnapshot(qSnap => {
+          const arr = [];
+          qSnap.forEach(d => arr.push(d.data()));
+          pubBookedAppointments = arr;
+          if (!pubSelectedDate || !isPublicDateSelectable(pubSelectedDate)) {
+            pubSelectedDate = findFirstAvailablePublicDate();
+          }
+          const validHours = getAvailableSlotsForDate(pubSelectedDate);
+          if (pubSelectedTime && !validHours.includes(pubSelectedTime)) {
+            pubSelectedTime = '';
+          }
+          renderPublicPortal();
+        });
+      }
+
+      if (pubStudioConfig.user && pubStudioConfig.user.brandColor) {
+        applyPublicBrandColor(pubStudioConfig.user.brandColor);
+      }
+      renderPublicPortal();
+    }
+
+    function applyPublicBrandColor(hex) {
+      document.documentElement.style.setProperty('--brand', hex);
+      document.documentElement.style.setProperty('--brand-dark', hex);
+      document.documentElement.style.setProperty('--brand-light', hex + '24');
+      document.documentElement.style.setProperty('--brand-soft', hex + '14');
+      const meta = document.getElementById('meta-theme-color');
+      if (meta) meta.setAttribute('content', hex);
+    }
+
+    function selectPublicService(srvId) {
+      pubSelectedServiceId = srvId;
+      const validHours = getAvailableSlotsForDate(pubSelectedDate);
+      if (pubSelectedTime && !validHours.includes(pubSelectedTime)) {
+        pubSelectedTime = '';
+      }
+      renderPublicPortal();
+    }
+
+    function changePublicMonth(delta) {
+      pubCalMonth += delta;
+      if (pubCalMonth > 11) { pubCalMonth = 0; pubCalYear++; }
+      else if (pubCalMonth < 0) { pubCalMonth = 11; pubCalYear--; }
+      renderPublicPortal();
+    }
+
+    function selectPublicDate(iso) {
+      if (!isPublicDateSelectable(iso)) return;
+      pubSelectedDate = iso;
+      pubSelectedTime = '';
+      renderPublicPortal();
+    }
+
+    function selectPublicTime(timeStr) {
+      pubSelectedTime = timeStr;
+      renderPublicPortal();
+    }
+
+    function renderPublicPortal() {
+      const u = pubStudioConfig.user || {};
+      const bs = pubStudioConfig.bookingSettings || DEFAULT_BOOKING_SETTINGS;
+      const catalog = pubStudioConfig.catalog || DEFAULT_CATALOG;
+
+      document.getElementById('pub-studio-name').textContent = u.name || 'Nails Studio';
+      document.getElementById('pub-studio-address').textContent = `📍 ${u.address || 'Estudio Nails Studio'}`;
+      document.getElementById('pub-studio-policy').textContent = `📌 ${u.policy || 'Tolerancia de 15 min. Avisar cambios con 24h de anticipación.'}`;
+
+      const pubVec = document.getElementById('pub-vector-logo');
+      const pubImg = document.getElementById('pub-custom-logo');
+      if (u.customLogo) {
+        pubVec.classList.add('hidden');
+        pubImg.src = u.customLogo;
+        pubImg.classList.remove('hidden');
+      } else {
+        pubVec.classList.remove('hidden');
+        pubImg.classList.add('hidden');
+      }
+
+      // 1. Servicios
+      const srvGrid = document.getElementById('pub-services-grid');
+      srvGrid.innerHTML = catalog.map(s => {
+        const active = s.id === pubSelectedServiceId;
+        return `
+          <button type="button" onclick="selectPublicService('${s.id}')" class="w-full text-left p-4 rounded-2xl border-2 transition flex items-center justify-between gap-3 ${active ? 'brand-soft-bg brand-border shadow-sm' : 'bg-[#FDFBF9] border-[#E8DCD8] hover:bg-white'}">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? 'brand-border brand-bg text-white' : 'border-[#8C7773]'} text-[10px]">${active ? '✓' : ''}</span>
+                <span class="font-extrabold text-[#2C2220] text-sm">${s.name}</span>
+              </div>
+              ${s.desc ? `<p class="text-xs text-[#7D6B67] pl-6">${s.desc}</p>` : ''}
+              <p class="text-[11px] text-[#8C7773] pl-6">⏱️ Duración aprox: ${s.duration} min</p>
+            </div>
+            ${bs.showPrices ? `<span class="font-serif-editorial font-bold text-2xl text-[#2C2220] shrink-0">$${Number(s.price || 0).toFixed(2)}</span>` : ''}
+          </button>
+        `;
+      }).join('');
+
+      // 2. Calendario Público
+      const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      document.getElementById('pub-cal-month-title').textContent = `${monthNames[pubCalMonth]} ${pubCalYear}`;
+
+      const ymPrefix = `${pubCalYear}-${String(pubCalMonth + 1).padStart(2, '0')}`;
+      const firstDay = new Date(pubCalYear, pubCalMonth, 1);
+      const daysInMonth = new Date(pubCalYear, pubCalMonth + 1, 0).getDate();
+      const startOffset = (firstDay.getDay() + 6) % 7;
+
+      let calHTML = '';
+      for (let i = 0; i < startOffset; i++) {
+        calHTML += `<div class="h-11"></div>`;
+      }
+      for (let day = 1; day <= daysInMonth; day++) {
+        const iso = `${ymPrefix}-${String(day).padStart(2, '0')}`;
+        const slots = getAvailableSlotsForDate(iso);
+        const selectable = slots.length > 0;
+        const isSelected = iso === pubSelectedDate;
+
+        let cls = 'bg-gray-100 text-gray-300 border-transparent cursor-not-allowed';
+        if (isSelected && selectable) {
+          cls = 'brand-bg text-white border-transparent shadow-md scale-[1.03]';
+        } else if (selectable) {
+          cls = 'bg-white text-[#2C2220] border-[#E8DCD8] hover:border-[#B86B62] cursor-pointer';
+        }
+
+        calHTML += `
+          <button type="button" ${selectable ? `onclick="selectPublicDate('${iso}')"` : 'disabled'} class="h-11 rounded-xl border text-xs font-extrabold flex flex-col items-center justify-center transition ${cls}">
+            <span>${day}</span>
+            ${selectable ? `<span class="w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? 'bg-white' : 'bg-[#1F8A5B]'}"></span>` : ''}
+          </button>
+        `;
+      }
+      document.getElementById('pub-cal-days-grid').innerHTML = calHTML;
+
+      // 3. Horas Libres
+      document.getElementById('pub-selected-date-label').textContent = formatHumanDate(pubSelectedDate);
+      const availableHours = getAvailableSlotsForDate(pubSelectedDate);
+      const hoursGrid = document.getElementById('pub-hours-grid');
+
+      if (availableHours.length === 0) {
+        hoursGrid.innerHTML = `<div class="col-span-3 sm:col-span-4 p-4 rounded-2xl bg-[#FDFBF9] border border-dashed border-[#E8DCD8] text-center text-xs text-[#8C7773]">No quedan cupos disponibles en esta fecha. Por favor elige otro día con punto verde.</div>`;
+      } else {
+        if (!pubSelectedTime) pubSelectedTime = availableHours[0];
+        hoursGrid.innerHTML = availableHours.map(h => {
+          const active = h === pubSelectedTime;
+          return `
+            <button type="button" onclick="selectPublicTime('${h}')" class="py-2.5 px-2 rounded-xl border text-xs font-extrabold transition ${active ? 'brand-bg text-white border-transparent shadow-sm' : 'bg-[#FDFBF9] text-[#2C2220] border-[#E8DCD8] hover:bg-white'}">
+              ${formatTime12h(h)}
+            </button>
+          `;
+        }).join('');
+      }
+
+      // 4. Resumen previo
+      const chosenSrv = catalog.find(s => s.id === pubSelectedServiceId) || catalog[0];
+      const summaryText = document.getElementById('pub-summary-text');
+      if (chosenSrv && pubSelectedDate && pubSelectedTime) {
+        const priceTxt = bs.showPrices ? ` • $${Number(chosenSrv.price || 0).toFixed(2)}` : '';
+        summaryText.innerHTML = `<strong>${chosenSrv.name}</strong>${priceTxt}<br/>📅 ${formatHumanDate(pubSelectedDate)} a las <strong>${formatTime12h(pubSelectedTime)}</strong>`;
+      } else {
+        summaryText.textContent = 'Selecciona un servicio, una fecha disponible y una hora.';
+      }
+    }
+
+    async function submitPublicBooking(e) {
+      e.preventDefault();
+      const catalog = pubStudioConfig.catalog || DEFAULT_CATALOG;
+      const chosenSrv = catalog.find(s => s.id === pubSelectedServiceId) || catalog[0];
+      if (!chosenSrv || !pubSelectedDate || !pubSelectedTime) {
+        alert('Por favor selecciona un servicio, un día disponible y una hora.');
+        return;
+      }
+
+      // Verificar una última vez que la hora siga libre
+      const stillAvailable = getAvailableSlotsForDate(pubSelectedDate).includes(pubSelectedTime);
+      if (!stillAvailable) {
+        alert('¡Ups! Otra clienta acaba de reservar esa hora hace unos segundos. Por favor elige otra hora disponible.');
+        renderPublicPortal();
+        return;
+      }
+
+      const name = document.getElementById('pub-client-name').value.trim();
+      const code = document.getElementById('pub-client-code').value;
+      const phone = document.getElementById('pub-client-phone').value.trim();
+      const notes = document.getElementById('pub-client-notes').value.trim();
+      const cleanDigits = phone.replace(/[^0-9]/g, '');
+
+      const btn = document.getElementById('pub-submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Agendando tu cita en tiempo real...';
+
+      const newBooking = {
+        id: 'online_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        clientId: 'c_online_' + cleanDigits,
+        clientName: name,
+        clientCode: code,
+        clientPhone: phone,
+        clientNotes: notes,
+        date: pubSelectedDate,
+        time: pubSelectedTime,
+        duration: Number(chosenSrv.duration) || 60,
+        price: Number(chosenSrv.price) || 0,
+        service: chosenSrv.name,
+        source: 'online',
+        unreadOnline: true,
+        createdAt: Date.now()
+      };
+
+      try {
+        if (db) {
+          await db.collection('studio_appointments').doc(newBooking.id).set(newBooking);
+        } else {
+          state.appointments.push(newBooking);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        document.getElementById('pub-booking-form').classList.add('hidden');
+        const successCard = document.getElementById('pub-success-card');
+        successCard.classList.remove('hidden');
+
+        const u = pubStudioConfig.user || {};
+        document.getElementById('pub-success-details').innerHTML = `
+          <p>👩‍🦰 <strong>Clienta:</strong> ${name} (${code} ${phone})</p>
+          <p>💅 <strong>Servicio:</strong> ${chosenSrv.name}</p>
+          <p>📅 <strong>Fecha:</strong> ${formatHumanDate(pubSelectedDate)}</p>
+          <p>⏰ <strong>Hora:</strong> ${formatTime12h(pubSelectedTime)}</p>
+          <p>📍 <strong>Lugar:</strong> ${u.address || 'Estudio Nails Studio'}</p>
+        `;
+
+        const waBtn = document.getElementById('pub-whatsapp-voucher-btn');
+        const studioPhoneClean = (u.phone || '').replace(/[^0-9]/g, '');
+        if (studioPhoneClean) {
+          const msg = `¡Hola! ✨ Acabo de agendar mi cita desde tu link web:\n• *Nombre:* ${name}\n• *Servicio:* ${chosenSrv.name}\n• *Fecha:* ${formatHumanDate(pubSelectedDate)}\n• *Hora:* ${formatTime12h(pubSelectedTime)}${notes ? `\n• *Nota:* ${notes}` : ''}`;
+          waBtn.href = `https://wa.me/${studioPhoneClean}?text=${encodeURIComponent(msg)}`;
+          waBtn.classList.remove('hidden');
+        } else {
+          waBtn.classList.add('hidden');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        alert('Hubo un problema de conexión al guardar tu reserva. Revisa tu internet e intenta nuevamente.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Confirmar y Agendar mi Cita';
+      }
+    }
+
+    function resetPublicBookingForm() {
+      pubSelectedTime = '';
+      document.getElementById('pub-client-notes').value = '';
+      document.getElementById('pub-success-card').classList.add('hidden');
+      document.getElementById('pub-booking-form').classList.remove('hidden');
+      pubSelectedDate = findFirstAvailablePublicDate();
+      renderPublicPortal();
+    }
+
+    // Destructor automático del cartel "Powered by Netlify" si se aloja en Netlify gratuito
+    (function removeExternalWatermarks() {
+      const clean = () => {
+        document.querySelectorAll('netlify-drawer, #netlify-drawer, [data-netlify-deploy-drawer], iframe[src*="netlify.com"]').forEach(el => el.remove());
+        document.querySelectorAll('div, aside, a, button, span').forEach(el => {
+          if (el.children.length <= 3 && (el.textContent || '').trim() === 'Powered by Netlify') {
+            const wrapper = el.closest('[style*="fixed"]') || el.parentElement || el;
+            wrapper.remove();
+          }
+        });
+      };
+      clean();
+      const obs = new MutationObserver(clean);
+      obs.observe(document.documentElement, { childList: true, subtree: true });
+      setInterval(clean, 900);
+    })();
+
     function renderAll() {
+      if (IS_PUBLIC_BOOKING) return;
       renderHeaderAndSettings();
+      renderOnlineBookingAlerts();
       renderDashboard();
       renderAppointments();
+      renderBookingAdmin();
       renderClients();
       renderServices();
       renderInventoryAndExpenses();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      if (IS_PUBLIC_BOOKING) {
+        initPublicBookingPortal();
+        return;
+      }
+
       loadState();
       const filterEl = document.getElementById('filter-month');
       if (filterEl) filterEl.value = getTodayISO().slice(0, 7);
@@ -2443,6 +3717,7 @@
         document.getElementById('login-screen').classList.remove('hidden');
       }
       renderAll();
+      startAdminRealtimeSync();
     });
   </script>
 </body>
